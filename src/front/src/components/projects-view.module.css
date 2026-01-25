@@ -1,0 +1,308 @@
+.container {
+    height: 100%;
+    padding: 24px;
+    overflow-y: auto;
+}
+
+/* Header */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.title {
+    font-size: 30px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.subtitle {
+    margin-top: 4px;
+    color: #4b5563;
+}
+
+/* Buttons / Icons */
+.addButton {
+    background: #2563eb;
+}
+
+.addButton:hover {
+    background: #1d4ed8;
+}
+
+.confirmButton {
+    background: #2563eb;
+}
+
+.confirmButton:hover {
+    background: #1d4ed8;
+}
+
+.iconSm {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+}
+
+.iconSmOnly {
+    width: 16px;
+    height: 16px;
+}
+
+.iconXs {
+    width: 12px;
+    height: 12px;
+    margin-right: 4px;
+}
+
+/* Dialog */
+.dialogContent {
+    max-width: 672px; /* 2xl 근처 */
+}
+
+.form {
+    padding: 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.formBlock {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.formGrid2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.dialogFooter {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* Stats */
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.statCard {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.statLabel {
+    font-size: 14px;
+    color: #4b5563;
+}
+
+.statValue {
+    margin-top: 4px;
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.statValueBlue {
+    color: #2563eb;
+}
+
+.statValueGreen {
+    color: #16a34a;
+}
+
+.statValueRed {
+    color: #dc2626;
+}
+
+/* Projects Grid */
+.projectsGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+@media (min-width: 1024px) {
+    .projectsGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.projectCard {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px;
+    transition: box-shadow 150ms ease;
+}
+
+.projectCard:hover {
+    box-shadow: 0 4px 12px rgba(17, 24, 39, 0.08);
+}
+
+.projectTop {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.projectTopLeft {
+    flex: 1;
+}
+
+.projectName {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.badgeRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.badgeBase {
+    border-width: 1px;
+}
+
+/* Priority badges */
+.badgePriorityHigh {
+    background: #fee2e2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
+
+.badgePriorityMedium {
+    background: #fef3c7;
+    color: #b45309;
+    border-color: #fde68a;
+}
+
+.badgePriorityLow {
+    background: #dcfce7;
+    color: #15803d;
+    border-color: #bbf7d0;
+}
+
+/* Status badges */
+.badgeStatusActive {
+    background: #dbeafe;
+    color: #1d4ed8;
+    border-color: #bfdbfe;
+}
+
+.badgeStatusCompleted {
+    background: #dcfce7;
+    color: #15803d;
+    border-color: #bbf7d0;
+}
+
+.badgeStatusOnHold {
+    background: #f3f4f6;
+    color: #374151;
+    border-color: #e5e7eb;
+}
+
+/* Delete button: hover 나타나는 효과 */
+.deleteButton {
+    opacity: 0;
+    transition: opacity 150ms ease;
+    color: #dc2626;
+}
+
+.projectCard:hover .deleteButton {
+    opacity: 1;
+}
+
+.deleteButton:hover {
+    color: #b91c1c;
+    background: #fef2f2;
+}
+
+/* Description (line clamp 대체: 2줄 제한) */
+.description {
+    font-size: 14px;
+    color: #4b5563;
+    margin-bottom: 12px;
+
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Meta */
+.meta {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.metaRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #4b5563;
+}
+
+/* Progress */
+.progressWrap {
+    margin-top: 16px;
+}
+
+.progressHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.progressLabel {
+    color: #4b5563;
+}
+
+.progressValue {
+    font-weight: 500;
+    color: #111827;
+}
+
+.progressTrack {
+    width: 100%;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 9999px;
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 8px;
+    background: #2563eb;
+    border-radius: 9999px;
+    transition: width 200ms ease;
+}
+
+/* Empty state */
+.empty {
+    text-align: center;
+    padding: 48px 0;
+}
+
+.emptyText {
+    color: #6b7280;
+}

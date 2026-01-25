@@ -1,0 +1,47 @@
+/* 전체 루트 */
+.appRoot {
+    min-height: 100vh;
+    background: #f9fafb; /* tailwind bg-gray-50 */
+    display: flex;
+}
+
+/* Sidebar(고정 256px) 옆 전체 영역 */
+.appShell {
+    flex: 1;
+    margin-left: 256px; /* ml-64 */
+    display: flex;
+}
+
+/* 가운데 메인 영역 */
+.appMain {
+    flex: 1;
+}
+
+/* Topbar 높이(64px) 아래로 컨텐츠 내려줌 */
+.appContent {
+    padding-top: 64px; /* pt-16 */
+    height: 100vh;     /* h-screen */
+    overflow: hidden;  /* overflow-hidden */
+}
+
+/* 홈 화면 스크롤 영역 */
+.homeScroll {
+    height: 100%;
+    padding: 24px;          /* px-6 py-6 */
+    overflow-y: auto;       /* overflow-y-auto */
+    display: flex;
+    flex-direction: column;
+    gap: 16px;              /* space-y-4 */
+}
+
+/* 오른쪽 캘린더 패널 */
+.rightPanel {
+    width: 320px;     /* w-80 */
+    flex-shrink: 0;
+}
+
+/* Topbar 아래로 맞추고 화면 꽉 */
+.rightPanelInner {
+    padding-top: 64px; /* pt-16 */
+    height: 100vh;     /* h-screen */
+}

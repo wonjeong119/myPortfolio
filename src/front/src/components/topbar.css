@@ -1,0 +1,205 @@
+/* Topbar shell */
+.topbar {
+    position: fixed;
+    top: 0;
+    left: 256px; /* left-64 */
+    right: 0;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    z-index: 40;
+}
+
+.topbarInner {
+    padding: 0 24px; /* px-6 */
+    height: 64px;    /* h-16 */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Search placeholder area (현재 비워둠) */
+.topbarSearch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 12px;
+    padding: 8px 12px;
+    width: 384px; /* w-96 */
+}
+
+/* Right area */
+.topbarRight {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Time box */
+.topbarTimeBox {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    background: #f9fafb; /* bg-gray-50 */
+    border-radius: 12px;
+}
+
+.topbarClockIcon {
+    width: 16px;
+    height: 16px;
+    color: #4b5563;
+}
+
+.topbarTimeText {
+    font-size: 14px;
+}
+
+.topbarTime {
+    color: #111827;
+    font-weight: 600;
+}
+
+.topbarDate {
+    color: #6b7280;
+    margin-left: 8px;
+}
+
+/* Notification button */
+.topbarNotiBtn {
+    position: relative;
+    padding: 8px;
+    border: 0;
+    background: transparent;
+    color: #4b5563;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.topbarNotiBtn:hover {
+    background: #f3f4f6; /* hover:bg-gray-100 */
+}
+
+.topbarNotiIcon {
+    width: 20px;
+    height: 20px;
+}
+
+.topbarNotiDot {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    background: #ef4444;
+    border-radius: 999px;
+}
+
+/* Avatar */
+.topbarAvatarWrap {
+    position: relative;
+}
+
+.topbarAvatarBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border: 0;
+    background: transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.topbarAvatarBtn:hover {
+    background: #f3f4f6;
+}
+
+.topbarAvatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* bg-gradient-to-br from-purple-400 to-pink-400 */
+    background: linear-gradient(135deg, #c084fc 0%, #f472b6 100%);
+}
+
+.topbarAvatarText {
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Dropdown menu */
+.topbarMenu {
+    position: absolute;
+    right: 0;
+    margin-top: 8px;
+    width: 192px; /* w-48 */
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+    padding: 8px 0;
+}
+
+.topbarMenuHeader {
+    padding: 8px 16px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.topbarMenuName {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+.topbarMenuEmail {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 2px;
+    margin-bottom: 0;
+}
+
+.topbarMenuItem,
+.topbarMenuItemDanger {
+    width: 100%;
+    padding: 8px 16px;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s ease;
+}
+
+.topbarMenuItem {
+    color: #374151;
+}
+
+.topbarMenuItem:hover,
+.topbarMenuItemDanger:hover {
+    background: #f3f4f6;
+}
+
+.topbarMenuItemDanger {
+    color: #dc2626; /* text-red-600 */
+}
+
+.topbarMenuIcon {
+    width: 16px;
+    height: 16px;
+}
+
+.topbarMenuFooter {
+    border-top: 1px solid #f3f4f6;
+    margin-top: 8px;
+    padding-top: 8px;
+}
