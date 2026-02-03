@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.project_01.project.mapper.ProjectMapper">
+
+    <resultMap id="ProjectResultMap" type="com.example.project_01.project.dto.ProjectResponse">
+        <id     property="id"         column="id"/>
+        <result property="name"       column="name"/>
+        <result property="category"   column="category"/>
+        <result property="priority"   column="priority"/>
+        <result property="status"     column="status"/>
+        <result property="deadline"   column="deadline"/>
+        <result property="description" column="description"/>
+        <result property="progress"   column="progress"/>
+        <result property="createdAt"  column="created_at"/>
+        <result property="updatedAt"  column="updated_at"/>
+    </resultMap>
+
+    <select id="projectsList" resultMap="ProjectResultMap">
+    SELECT
+        id, name, category, priority, status,
+        deadline, description, progress,
+        created_at, updated_at
+    FROM projects
+    ORDER BY deadline ASC, id ASC
+    </select>
+
+    <select id="projectSelect" parameterType="long" resultMap="ProjectResultMap">
+        SELECT
+            id, name, category, priority, status,
+            deadline, description, progress,
+            created_at, updated_at
+        FROM projects
+        WHERE id = #{id}
+    </select>
+
+
+    <insert id="projectInsert"
+            parameterType="com.example.project_01.project.dto.ProjectRequest">
+        INSERT INTO projects (
+            name, category, priority, status,
+            deadline, description, progress
+        ) VALUES (
+                     #{name}, #{category}, #{priority}, #{status},
+                     #{deadline}, COALESCE(#{description}, ''), COALESCE(#{progress}, 0)
+                 )
+    </insert>
+
+    <update id="projectUpdate" parameterType="map">
+        UPDATE projects
+        SET
+            name = #{request.name},
+            category = #{request.category},
+            priority = #{request.priority},
+            status = #{request.status},
+            deadline = #{request.deadline},
+            description = COALESCE(#{request.description}, ''),
+            progress = COALESCE(#{request.progress}, 0),
+            updated_at = now()
+        WHERE id = #{id}
+    </update>
+    <!-- ✅ (C) 삭제: projectDelete -->
+    <delete id="projectDelete" parameterType="long">
+        DELETE FROM projects
+        WHERE id = #{id}
+    </delete>
+
+</mapper>

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.project_01.analytics.mapper.AnalyticsMapper">
+
+    <select id="countTotalTasks" resultType="long">
+        SELECT COUNT(*) FROM tasks
+    </select>
+
+    <select id="countCompletedTasks" resultType="long">
+        SELECT COUNT(*) FROM tasks WHERE completed = true
+    </select>
+
+    <select id="findDailyCompletedStats" resultType="com.example.project_01.analytics.dto.ChartDataResponse">
+        WITH date_series AS (
+            SELECT generate_series(current_date - interval '6 days', current_date, '1 day')::date AS day
+        )
+        SELECT
+            TO_CHAR(ds.day, 'YYYY-MM-DD') as label,
+            COALESCE(COUNT(t.task_id), 0) as value
+        FROM date_series ds
+        LEFT JOIN tasks t ON TO_CHAR(t.updated_at, 'YYYY-MM-DD') = TO_CHAR(ds.day, 'YYYY-MM-DD')
+                          AND t.completed = true
+        GROUP BY ds.day
+        ORDER BY ds.day
+    </select>
+
+    <select id="findWeeklyCompletedStats" resultType="com.example.project_01.analytics.dto.ChartDataResponse">
+        WITH week_series AS (
+            SELECT generate_series(
+                date_trunc('week', current_date - interval '7 weeks'),
+                date_trunc('week', current_date),
+                '1 week'
+            )::date AS week_start
+        )
+        SELECT
+            TO_CHAR(ws.week_start, 'IYYY-IW') as label,
+            COALESCE(COUNT(t.task_id), 0) as value
+        FROM week_series ws
+        LEFT JOIN tasks t ON TO_CHAR(t.updated_at, 'IYYY-IW') = TO_CHAR(ws.week_start, 'IYYY-IW')
+                          AND t.completed = true
+        GROUP BY ws.week_start
+        ORDER BY ws.week_start
+    </select>
+
+    <select id="findMonthlyCompletedStats" resultType="com.example.project_01.analytics.dto.ChartDataResponse">
+        WITH month_series AS (
+            SELECT generate_series(
+                date_trunc('month', current_date - interval '11 months'),
+                date_trunc('month', current_date),
+                '1 month'
+            )::date AS month_start
+        )
+        SELECT
+            TO_CHAR(ms.month_start, 'YYYY-MM') as label,
+            COALESCE(COUNT(t.task_id), 0) as value
+        FROM month_series ms
+        LEFT JOIN tasks t ON TO_CHAR(t.updated_at, 'YYYY-MM') = TO_CHAR(ms.month_start, 'YYYY-MM')
+                          AND t.completed = true
+        GROUP BY ms.month_start
+        ORDER BY ms.month_start
+    </select>
+
+    <select id="findProjectCompletionStats" resultType="com.example.project_01.analytics.dto.ProjectStatResponse">
+        SELECT
+            p.name as projectName,
+            COUNT(CASE WHEN t.completed = true THEN 1 END) as completedCount,
+            COUNT(t.task_id) as totalCount
+        FROM projects p
+        LEFT JOIN tasks t ON p.id = t.project_id
+        GROUP BY p.id, p.name
+    </select>
+
+    <select id="findPriorityCompletionStats" resultType="com.example.project_01.analytics.dto.PriorityStatResponse">
+        SELECT
+            priority,
+            COUNT(*) as count
+        FROM tasks
+        WHERE completed = true
+        GROUP BY priority
+    </select>
+
+    <select id="findRecentCompletedTasks" resultType="com.example.project_01.task.dto.TaskResponse">
+        SELECT 
+            project_id as projectId,
+            task_id as taskId,
+            title, description, completed, priority, deadline, 
+            created_at as createdAt, updated_at as updatedAt
+        FROM tasks
+        WHERE completed = true
+        ORDER BY updated_at DESC
+        LIMIT #{limit}
+    </select>
+</mapper>

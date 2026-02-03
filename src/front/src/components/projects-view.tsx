@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Plus, Trash2, Calendar, Tag, AlertCircle } from 'lucide-react';
+import { useMemo, useEffect, useState } from 'react';
+import { Plus, Trash2, Calendar, Tag, AlertCircle, Edit2 } from 'lucide-react';
 
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
@@ -11,64 +11,74 @@ import { Badge } from './ui/badge';
 
 import styles from './projects-view.module.css';
 
+type Priority = 'high' | 'medium' | 'low';
+type Status = 'active' | 'completed' | 'on-hold';
+
 interface Project {
-  id: string;
+  id: number;
   name: string;
   category: string;
-  priority: 'high' | 'medium' | 'low';
-  status: 'active' | 'completed' | 'on-hold';
+  priority: Priority;
+  status: Status;
+  deadline: string; // yyyy-mm-dd
+  description: string;
+  progress: number;
+}
+
+interface ProjectUpsertRequest {
+  name: string;
+  category: string;
+  priority: Priority;
+  status: Status;
   deadline: string;
   description: string;
   progress: number;
 }
 
-const initialProjects: Project[] = [
-  {
-    id: '1',
-    name: '포트폴리오 웹사이트',
-    category: 'Web Development',
-    priority: 'high',
-    status: 'active',
-    deadline: '2026-02-15',
-    description: '개인 포트폴리오 웹사이트 제작',
-    progress: 75,
-  },
-  {
-    id: '2',
-    name: 'React 대시보드',
-    category: 'Web Development',
-    priority: 'medium',
-    status: 'active',
-    deadline: '2026-03-01',
-    description: '관리자용 대시보드 구축',
-    progress: 60,
-  },
-  {
-    id: '3',
-    name: 'REST API 서버',
-    category: 'Backend',
-    priority: 'high',
-    status: 'active',
-    deadline: '2026-02-28',
-    description: 'Node.js 기반 REST API 개발',
-    progress: 40,
-  },
-  {
-    id: '4',
-    name: '모바일 앱 프로토타입',
-    category: 'Mobile',
-    priority: 'low',
-    status: 'on-hold',
-    deadline: '2026-04-15',
-    description: 'React Native 앱 프로토타입',
-    progress: 20,
-  },
-];
+const API_BASE = 'http://localhost:8080/api/projects';
+
+async function apiGet<T>(url: string): Promise<T> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`GET ${url} failed: ${res.status}`);
+  return res.json();
+}
+
+async function apiPost(url: string, body: unknown): Promise<void> {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+s
+  if (!res.ok) throw new Error(`POST ${url} failed: ${res.status}`);
+}
+
+async function apiPut(url: string, body: unknown): Promise<void> {
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`PUT ${url} failed: ${res.status}`);
+}
+
+async function apiDelete(url: string): Promise<void> {
+  const res = await fetch(url, { method: 'DELETE' });
+  if (!res.ok) throw new Error(`DELETE ${url} failed: ${res.status}`);
+}
 
 export default function ProjectsView() {
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newProject, setNewProject] = useState<Partial<Project>>({
+
+  // 수정 모드 여부 (null이면 신규)
+  const [editingId, setEditingId] = useState<number | null>(null);
+
+  // 로딩/에러 상태
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const [form, setForm] = useState<Partial<ProjectUpsertRequest>>({
     name: '',
     category: '',
     priority: 'medium',
@@ -78,23 +88,32 @@ export default function ProjectsView() {
     progress: 0,
   });
 
-  const handleAddProject = () => {
-    if (!newProject.name || !newProject.category || !newProject.deadline) return;
+  // 최초 로딩: GET /api/projects
+  useEffect(() => {
+    let mounted = true;
 
-    const project: Project = {
-      id: Date.now().toString(),
-      name: newProject.name,
-      category: newProject.category,
-      priority: newProject.priority as 'high' | 'medium' | 'low',
-      status: newProject.status as 'active' | 'completed' | 'on-hold',
-      deadline: newProject.deadline,
-      description: newProject.description || '',
-      progress: newProject.progress || 0,
+    (async () => {
+      try {
+        setLoading(true);
+        setErrorMsg(null);
+        const data = await apiGet<Project[]>(API_BASE);
+        if (!mounted) return;
+        setProjects(data);
+      } catch (e: any) {
+        if (!mounted) return;
+        setErrorMsg(e?.message ?? '프로젝트를 불러오지 못했습니다.');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
     };
+  }, []);
 
-    setProjects((prev) => [...prev, project]);
-    setIsDialogOpen(false);
-    setNewProject({
+  const resetForm = () => {
+    setForm({
       name: '',
       category: '',
       priority: 'medium',
@@ -103,10 +122,83 @@ export default function ProjectsView() {
       description: '',
       progress: 0,
     });
+    setEditingId(null);
   };
 
-  const handleDeleteProject = (id: string) => {
-    setProjects((prev) => prev.filter((p) => p.id !== id));
+  const openCreate = () => {
+    resetForm();
+    setIsDialogOpen(true);
+  };
+
+  const openEdit = (p: Project) => {
+    setEditingId(p.id);
+    setForm({
+      name: p.name,
+      category: p.category,
+      priority: p.priority,
+      status: p.status,
+      deadline: p.deadline,
+      description: p.description ?? '',
+      progress: p.progress ?? 0,
+    });
+    setIsDialogOpen(true);
+  };
+
+  // 신규/수정 공용 저장
+  const handleSave = async () => {
+    const missing: string[] = [];
+    if (!form.name?.trim()) missing.push('프로젝트명');
+    if (!form.category?.trim()) missing.push('카테고리');
+    if (!form.deadline) missing.push('마감일');
+
+    if (missing.length > 0) {
+      alert(`필수값을 입력해주세요: ${missing.join(', ')}`);
+      return;
+    }
+
+    const payload: ProjectUpsertRequest = {
+      name: form.name!.trim(),
+      category: form.category!.trim(),
+      priority: (form.priority ?? 'medium') as Priority,
+      status: (form.status ?? 'active') as Status,
+      deadline: form.deadline!,
+      description: (form.description ?? '').trim(),
+      progress: Number.isFinite(form.progress as number) ? (form.progress as number) : 0,
+    };
+
+    try {
+      setErrorMsg(null);
+
+      if (editingId == null) {
+        // ✅ 신규: POST /api/projects
+        await apiPost(API_BASE, payload);
+      } else {
+        // ✅ 수정: PUT /api/projects/{id}
+        await apiPut(`${API_BASE}/${editingId}`, payload);
+      }
+
+      const refreshed = await apiGet<Project[]>(API_BASE);
+      setProjects(refreshed);
+
+      setIsDialogOpen(false);
+      resetForm();
+    } catch (e: any) {
+      setErrorMsg(e?.message ?? '저장에 실패했습니다.');
+    }
+  };
+
+  // 삭제: DELETE /api/projects/{id}
+  const handleDeleteProject = async (id: number) => {
+    const ok = window.confirm('정말 삭제할까요?');
+    if (!ok) return;
+
+    try {
+      setErrorMsg(null);
+      await apiDelete(`${API_BASE}/${id}`);
+      setProjects((prev) => prev.filter((p) => p.id !== id));
+    } catch (e: any) {
+      setErrorMsg(e?.message ?? '프로젝트 삭제에 실패했습니다.');
+    }
   };
 
   const priorityClass = (priority: Project['priority']) => {
@@ -168,11 +260,25 @@ export default function ProjectsView() {
           <div>
             <h1 className={styles.title}>프로젝트</h1>
             <p className={styles.subtitle}>모든 프로젝트를 관리하고 추적하세요</p>
+
+            {loading && <p className={styles.subtitle}>불러오는 중...</p>}
+            {errorMsg && (
+                <p className={styles.subtitle} style={{ color: 'crimson' }}>
+                  {errorMsg}
+                </p>
+            )}
           </div>
 
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog
+              open={isDialogOpen}
+              onOpenChange={(open) => {
+                setIsDialogOpen(open);
+                if (!open) resetForm();
+              }}
+          >
+            {/* ✅ 기존 UI 유지: 버튼 스타일 동일. 클릭 시 신규 오픈 */}
             <DialogTrigger asChild>
-              <Button className={styles.addButton}>
+              <Button className={styles.addButton} onClick={openCreate}>
                 <Plus className={styles.iconSm} />
                 새 프로젝트
               </Button>
@@ -180,7 +286,7 @@ export default function ProjectsView() {
 
             <DialogContent className={styles.dialogContent}>
               <DialogHeader>
-                <DialogTitle>새 프로젝트 추가</DialogTitle>
+                <DialogTitle>{editingId == null ? '새 프로젝트 추가' : '프로젝트 수정'}</DialogTitle>
               </DialogHeader>
 
               <div className={styles.form}>
@@ -189,8 +295,8 @@ export default function ProjectsView() {
                   <Input
                       id="project-name"
                       placeholder="프로젝트 이름을 입력하세요"
-                      value={newProject.name}
-                      onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
+                      value={form.name ?? ''}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
                   />
                 </div>
 
@@ -200,8 +306,8 @@ export default function ProjectsView() {
                     <Input
                         id="project-category"
                         placeholder="예: Web Development"
-                        value={newProject.category}
-                        onChange={(e) => setNewProject({ ...newProject, category: e.target.value })}
+                        value={form.category ?? ''}
+                        onChange={(e) => setForm({ ...form, category: e.target.value })}
                     />
                   </div>
 
@@ -210,8 +316,8 @@ export default function ProjectsView() {
                     <Input
                         id="project-deadline"
                         type="date"
-                        value={newProject.deadline}
-                        onChange={(e) => setNewProject({ ...newProject, deadline: e.target.value })}
+                        value={form.deadline ?? ''}
+                        onChange={(e) => setForm({ ...form, deadline: e.target.value })}
                     />
                   </div>
                 </div>
@@ -220,10 +326,8 @@ export default function ProjectsView() {
                   <div className={styles.formBlock}>
                     <Label htmlFor="project-priority">우선순위</Label>
                     <Select
-                        value={newProject.priority}
-                        onValueChange={(value) =>
-                            setNewProject({ ...newProject, priority: value as Project['priority'] })
-                        }
+                        value={(form.priority ?? 'medium') as Priority}
+                        onValueChange={(value) => setForm({ ...form, priority: value as Priority })}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -239,10 +343,8 @@ export default function ProjectsView() {
                   <div className={styles.formBlock}>
                     <Label htmlFor="project-status">상태</Label>
                     <Select
-                        value={newProject.status}
-                        onValueChange={(value) =>
-                            setNewProject({ ...newProject, status: value as Project['status'] })
-                        }
+                        value={(form.status ?? 'active') as Status}
+                        onValueChange={(value) => setForm({ ...form, status: value as Status })}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -262,8 +364,8 @@ export default function ProjectsView() {
                       id="project-description"
                       placeholder="프로젝트 설명을 입력하세요"
                       rows={3}
-                      value={newProject.description}
-                      onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
+                      value={form.description ?? ''}
+                      onChange={(e) => setForm({ ...form, description: e.target.value })}
                   />
                 </div>
 
@@ -275,8 +377,10 @@ export default function ProjectsView() {
                       min="0"
                       max="100"
                       placeholder="0"
-                      value={newProject.progress}
-                      onChange={(e) => setNewProject({ ...newProject, progress: parseInt(e.target.value) || 0 })}
+                      value={form.progress ?? 0}
+                      onChange={(e) =>
+                          setForm({ ...form, progress: Number.parseInt(e.target.value, 10) || 0 })
+                      }
                   />
                 </div>
               </div>
@@ -285,8 +389,8 @@ export default function ProjectsView() {
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   취소
                 </Button>
-                <Button onClick={handleAddProject} className={styles.confirmButton}>
-                  추가
+                <Button onClick={handleSave} className={styles.confirmButton}>
+                  {editingId == null ? '추가' : '저장'}
                 </Button>
               </div>
             </DialogContent>
@@ -325,26 +429,45 @@ export default function ProjectsView() {
                     <h3 className={styles.projectName}>{project.name}</h3>
 
                     <div className={styles.badgeRow}>
-                      <Badge variant="outline" className={`${styles.badgeBase} ${priorityClass(project.priority)}`}>
+                      <Badge
+                          variant="outline"
+                          className={`${styles.badgeBase} ${priorityClass(project.priority)}`}
+                      >
                         <AlertCircle className={styles.iconXs} />
                         {priorityLabel(project.priority)}
                       </Badge>
 
-                      <Badge variant="outline" className={`${styles.badgeBase} ${statusClass(project.status)}`}>
+                      <Badge
+                          variant="outline"
+                          className={`${styles.badgeBase} ${statusClass(project.status)}`}
+                      >
                         {statusLabel(project.status)}
                       </Badge>
                     </div>
                   </div>
 
-                  <Button
-                      variant="ghost"
-                      size="sm"
-                      className={styles.deleteButton}
-                      onClick={() => handleDeleteProject(project.id)}
-                      aria-label="프로젝트 삭제"
-                  >
-                    <Trash2 className={styles.iconSmOnly} />
-                  </Button>
+                  {/* ✅ 수정 + 삭제 버튼 */}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className={styles.deleteButton}
+                        onClick={() => openEdit(project)}
+                        aria-label="프로젝트 수정"
+                    >
+                      <Edit2 className={styles.iconSmOnly} />
+                    </Button>
+
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className={styles.deleteButton}
+                        onClick={() => handleDeleteProject(project.id)}
+                        aria-label="프로젝트 삭제"
+                    >
+                      <Trash2 className={styles.iconSmOnly} />
+                    </Button>
+                  </div>
                 </div>
 
                 <p className={styles.description}>{project.description}</p>
@@ -373,7 +496,7 @@ export default function ProjectsView() {
           ))}
         </div>
 
-        {projects.length === 0 && (
+        {!loading && projects.length === 0 && (
             <div className={styles.empty}>
               <p className={styles.emptyText}>프로젝트가 없습니다. 새 프로젝트를 추가해보세요!</p>
             </div>

@@ -1,204 +1,174 @@
+
 import { MoreVertical, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import styles from './items-table.module.css';
 
-const items = [
-  {
-    id: 1,
-    name: '포트폴리오 웹사이트',
-    category: 'Frontend',
-    status: 'completed',
-    assignee: '김민수',
-    progress: 100,
-    dueDate: '2026-01-15',
-    priority: 'high',
-  },
-  {
-    id: 2,
-    name: 'React 대시보드 구축',
-    category: 'Frontend',
-    status: 'in-progress',
-    assignee: '이지은',
-    progress: 75,
-    dueDate: '2026-01-25',
-    priority: 'high',
-  },
-  {
-    id: 3,
-    name: 'REST API 서버 개발',
-    category: 'Backend',
-    status: 'in-progress',
-    assignee: '박서준',
-    progress: 60,
-    dueDate: '2026-01-28',
-    priority: 'high',
-  },
-  {
-    id: 4,
-    name: '블로그 플랫폼',
-    category: 'Fullstack',
-    status: 'in-progress',
-    assignee: '최수지',
-    progress: 45,
-    dueDate: '2026-02-10',
-    priority: 'medium',
-  },
-  {
-    id: 5,
-    name: 'UI 컴포넌트 라이브러리',
-    category: 'Design',
-    status: 'pending',
-    assignee: '정우성',
-    progress: 20,
-    dueDate: '2026-02-15',
-    priority: 'medium',
-  },
-  {
-    id: 6,
-    name: '모바일 앱 프로토타입',
-    category: 'Mobile',
-    status: 'pending',
-    assignee: '강동원',
-    progress: 15,
-    dueDate: '2026-02-20',
-    priority: 'low',
-  },
-];
+// API DTO Interface
+interface Item {
+  id: number;
+  name: string;
+  category: string;
+  status: string;
+  assignee: string;
+  progress: number;
+  dueDate: string;
+  priority: string;
+}
 
-const getStatusBadge = (status: string) => {
-  const styles = {
-    completed: 'bg-green-100 text-green-700 border-green-200',
-    'in-progress': 'bg-blue-100 text-blue-700 border-blue-200',
-    pending: 'bg-gray-100 text-gray-700 border-gray-200',
-  };
+type Status = Item['status'];
+type Priority = Item['priority'];
 
-  const icons = {
+const getStatusBadge = (status: Status) => {
+  // Match projects-view.tsx status values: active, completed, on-hold
+  const icons: Record<string, any> = {
+    active: Clock,
     completed: CheckCircle,
-    'in-progress': Clock,
-    pending: AlertCircle,
+    'on-hold': AlertCircle,
   };
 
-  const labels = {
+  const labels: Record<string, string> = {
+    active: '진행 중',
     completed: '완료',
-    'in-progress': '진행중',
-    pending: '대기',
+    'on-hold': '보류',
   };
 
-  const Icon = icons[status as keyof typeof icons];
+  const Icon = icons[status] || AlertCircle;
+
+  const statusClassMap: Record<string, string> = {
+    active: styles.statusInProgress,
+    completed: styles.statusCompleted,
+    'on-hold': styles.statusPending,
+  };
+
+  const statusClass = statusClassMap[status] || styles.statusPending;
 
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${styles[status as keyof typeof styles]}`}>
-      <Icon className="w-3 h-3" />
-      {labels[status as keyof typeof labels]}
+    <span className={`${styles.badgeBase} ${statusClass}`}>
+      <Icon className={styles.badgeIcon} />
+      {labels[status] || status}
     </span>
   );
 };
 
-const getPriorityBadge = (priority: string) => {
-  const styles = {
-    high: 'text-red-700',
-    medium: 'text-yellow-700',
-    low: 'text-gray-700',
-  };
 
-  const labels = {
+const getPriorityBadge = (priority: Priority) => {
+  const labels: Record<string, string> = {
     high: '높음',
     medium: '중간',
     low: '낮음',
   };
 
-  return (
-    <span className={`text-sm font-medium ${styles[priority as keyof typeof styles]}`}>
-      {labels[priority as keyof typeof labels]}
-    </span>
-  );
+  const priorityClassMap: Record<string, string> = {
+    high: styles.priorityHigh,
+    medium: styles.priorityMedium,
+    low: styles.priorityLow,
+  };
+
+  const priorityClass = priorityClassMap[priority] || styles.priorityLow;
+
+  return <span className={`${styles.priorityBase} ${priorityClass}`}>{labels[priority] || priority}</span>;
 };
 
 export default function ItemsTable() {
+  const [items, setItems] = useState<Item[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
+
+  useEffect(() => {
+    fetch('/api/main/items')
+      .then((res) => res.json())
+      .then((data) => setItems(data))
+      .catch((err) => console.error('Failed to fetch items:', err));
+  }, []);
+
+  const filteredItems = useMemo(() => {
+    return items.filter((item) => {
+      const statusMatch = statusFilter === 'all' || item.status === statusFilter;
+      const priorityMatch = priorityFilter === 'all' || item.priority === priorityFilter;
+      return statusMatch && priorityMatch;
+    });
+  }, [items, statusFilter, priorityFilter]);
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col" style={{ maxHeight: 'calc(100vh - 520px)' }}>
-      <div className="px-6 py-3 border-b border-gray-100 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">프로젝트 목록</h2>
-            <p className="text-sm text-gray-600">전체 {items.length}개의 프로젝트</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <select className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500">
-              <option>전체 상태</option>
-              <option>완료</option>
-              <option>진행중</option>
-              <option>대기</option>
-            </select>
-            <select className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-blue-500">
-              <option>전체 우선순위</option>
-              <option>높음</option>
-              <option>중간</option>
-              <option>낮음</option>
-            </select>
-          </div>
+    <div className={styles.wrapper}>
+      <div className={styles.header}>
+        <div>
+          <h2 className={styles.title}>프로젝트 목록</h2>
+          <p className={styles.subtitle}>전체 {filteredItems.length}개의 프로젝트</p>
+        </div>
+
+        <div className={styles.filters}>
+          <select
+            className={styles.select}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="all">전체 상태</option>
+            <option value="completed">완료</option>
+            <option value="active">진행 중</option>
+            <option value="on-hold">보류</option>
+          </select>
+
+          <select
+            className={styles.select}
+            value={priorityFilter}
+            onChange={(e) => setPriorityFilter(e.target.value)}
+          >
+            <option value="all">전체 우선순위</option>
+            <option value="high">높음</option>
+            <option value="medium">중간</option>
+            <option value="low">낮음</option>
+          </select>
         </div>
       </div>
 
-      <div className="overflow-auto flex-1">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-100 sticky top-0">
+      <div className={styles.tableScroll}>
+        <table className={styles.table}>
+          <thead className={styles.thead}>
             <tr>
-              <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                프로젝트명
-              </th>
-              <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                카테고리
-              </th>
-              <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                상태
-              </th>
-              <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                진행률
-              </th>
-              <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                마감일
-              </th>
-              <th className="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                우선순위
-              </th>
-              <th className="px-6 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                작업
-              </th>
+              <th className={styles.th}>프로젝트명</th>
+              <th className={styles.th}>카테고리</th>
+              <th className={styles.th}>상태</th>
+              <th className={styles.th}>진행률</th>
+              <th className={styles.th}>마감일</th>
+              <th className={styles.th}>우선순위</th>
+              {/* <th className={`${styles.th} ${styles.thRight}`}>작업</th>*/}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-100">
-            {items.map((item) => (
-              <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-3 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">{item.name}</div>
+
+          <tbody className={styles.tbody}>
+            {filteredItems.map((item) => (
+              <tr key={item.id} className={styles.tr}>
+                <td className={styles.td}>
+                  <div className={styles.name}>{item.name}</div>
                 </td>
-                <td className="px-6 py-3 whitespace-nowrap">
-                  <span className="text-sm text-gray-600">{item.category}</span>
+
+                <td className={styles.td}>
+                  <span className={styles.muted}>{item.category}</span>
                 </td>
-                <td className="px-6 py-3 whitespace-nowrap">
-                  {getStatusBadge(item.status)}
-                </td>
-                <td className="px-6 py-3 whitespace-nowrap">
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-gray-200 rounded-full h-2 w-20">
-                      <div
-                        className="bg-blue-600 h-2 rounded-full transition-all"
-                        style={{ width: `${item.progress}%` }}
-                      />
+
+                <td className={styles.td}>{getStatusBadge(item.status)}</td>
+
+                <td className={styles.td}>
+                  <div className={styles.progressRow}>
+                    <div className={styles.progressTrack}>
+                      <div className={styles.progressFill} style={{ width: `${item.progress}%` }} />
                     </div>
-                    <span className="text-sm text-gray-600">{item.progress}%</span>
+                    <span className={styles.muted}>{item.progress}%</span>
                   </div>
                 </td>
-                <td className="px-6 py-3 whitespace-nowrap">
-                  <span className="text-sm text-gray-600">{item.dueDate}</span>
+
+                <td className={styles.td}>
+                  <span className={styles.muted}>{item.dueDate}</span>
                 </td>
-                <td className="px-6 py-3 whitespace-nowrap">
-                  {getPriorityBadge(item.priority)}
-                </td>
-                <td className="px-6 py-3 whitespace-nowrap text-right">
-                  <button className="text-gray-400 hover:text-gray-600">
-                    <MoreVertical className="w-5 h-5" />
+
+                <td className={styles.td}>{getPriorityBadge(item.priority)}</td>
+
+                {/*<td className={`${styles.td} ${styles.tdRight}`}>
+                  <button className={styles.moreBtn} type="button" aria-label="more">
+                    <MoreVertical className={styles.moreIcon} />
                   </button>
-                </td>
+                </td>*/}
               </tr>
             ))}
           </tbody>

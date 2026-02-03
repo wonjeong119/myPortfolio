@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.project_01.task.mapper.TaskMapper">
+
+    <resultMap id="TaskResultMap" type="com.example.project_01.task.dto.TaskResponse">
+        <id property="projectId" column="project_id"/>
+        <id property="taskId" column="task_id"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="completed" column="completed"/>
+        <result property="priority" column="priority"/>
+        <result property="deadline" column="deadline"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!-- Sequence Management -->
+    <select id="getNextTaskIdForUpdate" resultType="long">
+        SELECT next_task_id
+        FROM project_task_seq
+        WHERE project_id = #{projectId}
+        FOR UPDATE
+    </select>
+
+    <insert id="insertInitialTaskSeq">
+        INSERT INTO project_task_seq (project_id, next_task_id)
+        VALUES (#{projectId}, 2)
+    </insert>
+
+    <update id="updateTaskSeq">
+        UPDATE project_task_seq
+        SET next_task_id = #{nextTaskId}
+        WHERE project_id = #{projectId}
+    </update>
+
+    <!-- Task CRUD -->
+    <select id="findAll" resultMap="TaskResultMap">
+        SELECT * FROM tasks ORDER BY created_at DESC
+    </select>
+
+    <select id="findRecentCompletedTasks" resultMap="TaskResultMap">
+        SELECT *
+        FROM tasks
+        WHERE completed = true
+          AND updated_at >= NOW() - INTERVAL '3 days'
+        ORDER BY updated_at DESC
+        LIMIT 5
+    </select>
+
+    <select id="findByProjectId" resultMap="TaskResultMap">
+        SELECT * FROM tasks WHERE project_id = #{projectId} ORDER BY task_id ASC
+    </select>
+
+    <select id="findByPk" resultMap="TaskResultMap">
+        SELECT * FROM tasks WHERE project_id = #{projectId} AND task_id = #{taskId}
+    </select>
+
+    <insert id="insertTask" parameterType="com.example.project_01.task.dto.TaskResponse">
+        INSERT INTO tasks (
+            project_id, task_id, title, description, completed, priority, deadline
+        ) VALUES (
+            #{projectId}, #{taskId}, #{title}, #{description}, #{completed}, #{priority}, #{deadline}
+        )
+    </insert>
+
+    <update id="updateTask">
+        UPDATE tasks
+        SET
+            title = #{request.title},
+            description = #{request.description},
+            priority = #{request.priority},
+            deadline = #{request.deadline},
+            completed = #{request.completed},
+            updated_at = now()
+        WHERE project_id = #{projectId} AND task_id = #{taskId}
+    </update>
+
+    <delete id="deleteTask">
+        DELETE FROM tasks WHERE project_id = #{projectId} AND task_id = #{taskId}
+    </delete>
+
+    <update id="toggleTaskStatus">
+        UPDATE tasks
+        SET completed = NOT completed,
+            updated_at = now()
+        WHERE project_id = #{projectId} AND task_id = #{taskId}
+    </update>
+
+</mapper>

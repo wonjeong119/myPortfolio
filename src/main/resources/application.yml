@@ -3,10 +3,23 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5433/postgres
+    url: jdbc:postgresql://192.168.50.208:5433/postgres
     username: postgres
     password: admin
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
 
+mybatis:
+  mapper-locations: classpath:/mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+  logging:
+    level:
+      com.example.project_01: DEBUG
+      org.mybatis: DEBUG
+      org.apache.ibatis: DEBUG
 jpa:
   hibernate:
     ddl-auto: update

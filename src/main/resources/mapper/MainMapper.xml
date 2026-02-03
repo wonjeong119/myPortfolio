@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.project_01.main.mapper.MainMapper">
+
+    <select id="selectMainItems" resultType="com.example.project_01.main.dto.MainItemDto">
+        SELECT
+            id,
+            name,
+            category,
+            status,
+            priority,
+            deadline AS dueDate,
+            progress,
+            '담당자' AS assignee
+        FROM projects
+        ORDER BY deadline ASC
+    </select>
+
+    <!-- Hero Chart: Last 6 months task activity -->
+    <select id="selectChartData" resultType="com.example.project_01.main.dto.MainHeroDto$ChartData">
+        SELECT
+            TO_CHAR(d, 'MM월') as month,
+            (SELECT COUNT(*) FROM tasks WHERE deadline >= d AND deadline &lt; d + interval '1 month') as value
+        FROM generate_series(
+                 date_trunc('month', current_date) - interval '5 months',
+                 date_trunc('month', current_date),
+                 interval '1 month'
+             ) d
+    </select>
+
+    <!-- Hero Stats: Weekly and Remaining Tasks -->
+    <select id="selectHeroStats" resultType="com.example.project_01.main.dto.MainHeroDto">
+        SELECT
+            -- 이번 주 작업: 마감일이 이번 주인 작업 수
+            (SELECT COUNT(*) FROM tasks WHERE deadline >= date_trunc('week', current_date) AND deadline &lt; date_trunc('week', current_date) + interval '1 week') as weeklyTasks,
+            -- 지난주 작업: 마감일이 지난주인 작업 수
+            (SELECT COUNT(*) FROM tasks WHERE deadline >= date_trunc('week', current_date) - interval '1 week' AND deadline &lt; date_trunc('week', current_date)) as completedTasksThisWeek,
+            -- 남은 작업수: 이번 주 작업 수
+            (SELECT COUNT(*) FROM tasks WHERE deadline >= date_trunc('week', current_date) AND deadline &lt; date_trunc('week', current_date) + interval '1 week') as remainingTasks,
+            -- 증감: 지난주 작업수 - 이번주 작업수
+            (
+                (SELECT COUNT(*) FROM tasks WHERE deadline >= date_trunc('week', current_date) - interval '1 week' AND deadline &lt; date_trunc('week', current_date))
+                -
+                (SELECT COUNT(*) FROM tasks WHERE deadline >= date_trunc('week', current_date) AND deadline &lt; date_trunc('week', current_date) + interval '1 week')
+            ) as remainingTasksDiff,
+            '+10%' as trendPercentage
+    </select>
+
+
+    <!-- Summary Stats -->
+    <select id="selectSummaryStats" resultType="com.example.project_01.main.dto.MainSummaryDto">
+        SELECT
+            (SELECT COUNT(*) FROM projects WHERE status = 'active')::text as ongoingProjectsValue,
+            '+' || (SELECT COUNT(*) FROM projects WHERE status = 'active' AND created_at >= date_trunc('week', current_date))::text as ongoingProjectsTrend,
+            (SELECT COUNT(*) FROM projects WHERE status = 'active' AND deadline BETWEEN current_date AND current_date + interval '1 month')::text || '개 마감 임박' as ongoingProjectsDesc,
+
+            (SELECT COUNT(*) FROM projects WHERE status = 'completed' AND deadline >= date_trunc('month', current_date) AND deadline &lt; date_trunc('month', current_date) + interval '1 month')::text as completedProjectsValue,
+            '+' || (SELECT COUNT(*) FROM projects WHERE status = 'completed' AND deadline >= date_trunc('month', current_date) AND deadline &lt; date_trunc('month', current_date) + interval '1 month')::text as completedProjectsTrend,
+            '목표 달성 ' || 
+                CASE 
+                    WHEN (SELECT COUNT(*) FROM projects WHERE deadline >= date_trunc('month', current_date) AND deadline &lt; date_trunc('month', current_date) + interval '1 month') = 0 THEN '0'
+                    ELSE ROUND(
+                        (SELECT COUNT(*) FROM projects WHERE status = 'completed' AND deadline >= date_trunc('month', current_date) AND deadline &lt; date_trunc('month', current_date) + interval '1 month')::numeric /
+                        GREATEST((SELECT COUNT(*) FROM projects WHERE deadline >= date_trunc('month', current_date) AND deadline &lt; date_trunc('month', current_date) + interval '1 month')::numeric, 1) * 100
+                    )::text
+                END || '%' as completedProjectsDesc,
+
+
+
+            (SELECT COUNT(*) FROM tasks WHERE completed = true AND deadline >= date_trunc('week', current_date) AND deadline &lt; date_trunc('week', current_date) + interval '1 week')::text as completedTasksValue,
+            '+' || (SELECT COUNT(*) FROM tasks WHERE completed = true AND deadline >= date_trunc('week', current_date) AND deadline &lt; date_trunc('week', current_date) + interval '1 week')::text as completedTasksTrend,
+            '이번 주 기준' as completedTasksDesc,
+
+
+            (SELECT COUNT(*) FROM tasks WHERE completed = false)::text as remainingTasksValue,
+            '-' || (SELECT COUNT(*) FROM tasks WHERE completed = true AND updated_at >= date_trunc('week', current_date))::text as remainingTasksTrend,
+            '우선순위 높음 ' || (SELECT COUNT(*) FROM tasks WHERE completed = false AND priority = 'high')::text || '개' as remainingTasksDesc
+    </select>
+
+
+</mapper>

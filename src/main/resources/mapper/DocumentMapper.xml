@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.project_01.document.mapper.DocumentMapper">
+
+    <resultMap id="DocumentResultMap" type="com.example.project_01.document.dto.DocumentResponse">
+        <id property="id" column="id"/>
+        <result property="projectId" column="project_id"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="docType" column="doc_type"/>
+        <result property="originalName" column="original_name"/>
+        <result property="storedName" column="stored_name"/>
+        <result property="fileSize" column="file_size"/>
+        <result property="mimeType" column="mime_type"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <!-- storage_path, checksum_sha256 etc mapping if needed in future -->
+    </resultMap>
+    
+    <insert id="insertDocument" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO project_documents (
+            project_id, title, description, doc_type,
+            original_name, stored_name, storage_path, mime_type, file_size
+        ) VALUES (
+            #{projectId}, #{title}, #{description}, #{docType}::document_type,
+            #{originalName}, #{storedName}, '/upload', #{mimeType}, #{fileSize}
+        )
+    </insert>
+
+    <select id="findByProjectId" resultMap="DocumentResultMap">
+        SELECT *
+        FROM project_documents
+        WHERE project_id = #{projectId}
+        ORDER BY created_at DESC
+    </select>
+    
+    <select id="findById" resultMap="DocumentResultMap">
+        SELECT *
+        FROM project_documents
+        WHERE id = #{id}
+    </select>
+    
+    <update id="updateDocument">
+        UPDATE project_documents
+        SET
+            title = #{request.title},
+            description = #{request.description},
+            doc_type = #{request.docType}::document_type,
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+    
+    <delete id="deleteDocument">
+        DELETE FROM project_documents WHERE id = #{id}
+    </delete>
+
+</mapper>

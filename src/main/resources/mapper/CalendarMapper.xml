@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.project_01.calendar.mapper.CalendarMapper">
+
+    <resultMap id="CalendarResultMap" type="com.example.project_01.calendar.dto.CalendarResponse">
+        <id property="id" column="id"/>
+        <result property="date" column="event_date"/>
+        <result property="title" column="title"/>
+        <result property="type" column="event_type"/>
+        <result property="time" column="event_time"/>
+        <result property="memo" column="memo"/>
+    </resultMap>
+
+    <select id="findByDateRange" resultMap="CalendarResultMap">
+        SELECT * FROM calendar_event
+        WHERE event_date BETWEEN #{start} AND #{end}
+        ORDER BY event_date ASC, id ASC
+    </select>
+
+    <select id="findById" resultMap="CalendarResultMap">
+        SELECT * FROM calendar_event WHERE id = #{id}
+    </select>
+
+    <insert id="insertEvent" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO calendar_event (
+            event_date, title, event_type, event_time, memo
+        ) VALUES (
+            #{date}, #{title}, #{type}, #{time}, #{memo}
+        )
+    </insert>
+
+    <update id="updateEvent">
+        UPDATE calendar_event
+        SET
+            event_date = #{request.date},
+            title = #{request.title},
+            event_type = #{request.type},
+            event_time = #{request.time},
+            memo = #{request.memo}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteEvent">
+        DELETE FROM calendar_event WHERE id = #{id}
+    </delete>
+
+</mapper>

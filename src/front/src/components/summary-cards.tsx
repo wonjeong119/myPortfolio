@@ -1,77 +1,106 @@
-import { FolderOpen, GitBranch, Coffee, Star } from 'lucide-react';
+import { FolderOpen, CheckSquare, Clock, ListTodo } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import styles from './summary-cards.module.css';
 
-const summaryData = [
-  {
-    id: 1,
-    icon: FolderOpen,
-    title: '진행 중인 프로젝트',
-    value: '5',
-    description: '2개 마감 임박',
-    bgColor: 'bg-blue-50',
-    iconColor: 'text-blue-600',
-    trend: '+2',
-  },
-  {
-    id: 2,
-    icon: GitBranch,
-    title: '이번 달 커밋',
-    value: '142',
-    description: '일평균 7.1개',
-    bgColor: 'bg-green-50',
-    iconColor: 'text-green-600',
-    trend: '+18',
-  },
-  {
-    id: 3,
-    icon: Coffee,
-    title: '집중 시간',
-    value: '86h',
-    description: '이번 달 누적',
-    bgColor: 'bg-purple-50',
-    iconColor: 'text-purple-600',
-    trend: '+12h',
-  },
-  {
-    id: 4,
-    icon: Star,
-    title: '완료한 작업',
-    value: '24',
-    description: '이번 주 기준',
-    bgColor: 'bg-orange-50',
-    iconColor: 'text-orange-600',
-    trend: '+8',
-  },
-];
+interface SummaryData {
+  ongoingProjectsValue: string;
+  ongoingProjectsTrend: string;
+  ongoingProjectsDesc: string;
+  completedProjectsValue: string;
+  completedProjectsTrend: string;
+  completedProjectsDesc: string;
+  completedTasksValue: string;
+  completedTasksTrend: string;
+  completedTasksDesc: string;
+  remainingTasksValue: string;
+  remainingTasksTrend: string;
+  remainingTasksDesc: string;
+}
+
+type Variant = 'blue' | 'green' | 'purple' | 'orange';
 
 export default function SummaryCards() {
+  const [data, setData] = useState<SummaryData | null>(null);
+
+  useEffect(() => {
+    fetch('/api/main/summary')
+      .then((res) => res.json())
+      .then((result) => setData(result))
+      .catch((err) => console.error('Failed to fetch summary:', err));
+  }, []);
+
+  const summaryCards = data
+    ? [
+      {
+        id: 1,
+        icon: FolderOpen,
+        title: '진행 중인 프로젝트',
+        value: data.ongoingProjectsValue,
+        description: data.ongoingProjectsDesc,
+        variant: 'blue' as Variant,
+        trend: data.ongoingProjectsTrend,
+      },
+      {
+        id: 2,
+        icon: CheckSquare,
+        title: '이번 달 완료한 프로젝트',
+        value: data.completedProjectsValue,
+        description: data.completedProjectsDesc,
+        variant: 'green' as Variant,
+        trend: data.completedProjectsTrend,
+      },
+      {
+        id: 3,
+        icon: ListTodo,
+        title: '완료한 작업',
+        value: data.completedTasksValue,
+        description: data.completedTasksDesc,
+        variant: 'purple' as Variant,
+        trend: data.completedTasksTrend,
+      },
+      {
+        id: 4,
+        icon: Clock,
+        title: '남은 작업',
+        value: data.remainingTasksValue,
+        description: data.remainingTasksDesc,
+        variant: 'orange' as Variant,
+        trend: data.remainingTasksTrend,
+      },
+    ]
+    : [];
+
   return (
-    <div>
-      <div className="mb-3">
-        <h2 className="text-xl font-bold text-gray-900">활동 요약</h2>
-        <p className="text-gray-600 text-sm mt-1">나의 프로젝트 활동을 한눈에 확인하세요</p>
+    <div className={styles.wrapper}>
+      <div className={styles.header}>
+        <h2 className={styles.title}>활동 요약</h2>
+        <p className={styles.subtitle}>나의 프로젝트 활동을 한눈에 확인하세요</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {summaryData.map((item) => {
+      <div className={styles.grid}>
+        {summaryCards.map((item) => {
           const Icon = item.icon;
+          const variant = item.variant;
+
           return (
-            <div
-              key={item.id}
-              className="bg-white rounded-lg p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className={`w-10 h-10 ${item.bgColor} rounded-lg flex items-center justify-center`}>
-                  <Icon className={`w-5 h-5 ${item.iconColor}`} />
+            <div key={item.id} className={styles.card}>
+              <div className={styles.topRow}>
+                <div className={styles.left}>
+                  <div className={`${styles.iconBox} ${styles[`iconBox_${variant}`]}`}>
+                    <Icon className={`${styles.icon} ${styles[`icon_${variant}`]}`} />
+                  </div>
+
+                  <span className={styles.cardTitle}>{item.title}</span>
                 </div>
-                <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+
+                <div className={styles.trend}>
                   <span>{item.trend}</span>
                 </div>
               </div>
-              
-              <div className="space-y-1">
-                <p className="text-xs text-gray-600">{item.title}</p>
-                <p className="text-2xl font-bold text-gray-900">{item.value}</p>
-                <p className="text-xs text-gray-500">{item.description}</p>
+
+              <div className={styles.body}>
+                <p className={styles.value}>{item.value}</p>
+                <p className={styles.desc}>{item.description}</p>
               </div>
             </div>
           );

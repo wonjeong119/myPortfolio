@@ -1,5 +1,17 @@
-import { useState } from 'react';
-import { Plus, Trash2, Edit2, FileText, Tag, Calendar, Download, Upload, Filter, File } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import {
+  Plus,
+  Trash2,
+  Edit2,
+  FileText,
+  Tag,
+  Calendar,
+  Download,
+  Upload,
+  Filter,
+  File as FileIcon,
+} from 'lucide-react';
+
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Input } from './ui/input';
@@ -8,294 +20,271 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Textarea } from './ui/textarea';
 import { Badge } from './ui/badge';
 
-interface Document {
-  id: string;
-  projectId: string;
+import styles from './documents-view.module.css';
+import * as React from "react";
+
+// --- Types ---
+interface DocumentResponse {
+  id: number;
+  projectId: number;
   title: string;
   description: string;
-  type: 'spec' | 'design' | 'guide' | 'api' | 'other';
-  fileName: string;
+  docType: 'spec' | 'design' | 'guide' | 'api' | 'other';
+  originalName: string;
+  storedName: string;
   fileSize: number;
-  fileType: string;
-  fileData?: string;
+  mimeType: string;
   createdAt: string;
   updatedAt: string;
 }
 
 interface Project {
-  id: string;
+  id: string; // Select value string
   name: string;
 }
 
-const projects: Project[] = [
-  { id: '1', name: '포트폴리오 웹사이트' },
-  { id: '2', name: 'React 대시보드' },
-  { id: '3', name: 'REST API 서버' },
-  { id: '4', name: '모바일 앱 프로토타입' },
-];
+// --- API Helper ---
+const API_BASE = 'http://localhost:8080/api';
 
-const initialDocuments: Document[] = [
-  {
-    id: '1',
-    projectId: '1',
-    title: '포트폴리오 디자인 시스템',
-    description: 'Figma 디자인 파일 및 컴포넌트 가이드',
-    type: 'design',
-    fileName: 'design-system.pdf',
-    fileSize: 2457600,
-    fileType: 'application/pdf',
-    createdAt: '2026-01-10',
-    updatedAt: '2026-01-20',
-  },
-  {
-    id: '2',
-    projectId: '1',
-    title: '기술 스택 문서',
-    description: 'React, TypeScript, Tailwind CSS 사용 가이드',
-    type: 'guide',
-    fileName: 'tech-stack-guide.docx',
-    fileSize: 1024000,
-    fileType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    createdAt: '2026-01-12',
-    updatedAt: '2026-01-18',
-  },
-  {
-    id: '3',
-    projectId: '2',
-    title: '대시보드 요구사항 명세',
-    description: '기능 요구사항 및 화면 구성 명세서',
-    type: 'spec',
-    fileName: 'dashboard-requirements.pdf',
-    fileSize: 3145728,
-    fileType: 'application/pdf',
-    createdAt: '2026-01-08',
-    updatedAt: '2026-01-15',
-  },
-  {
-    id: '4',
-    projectId: '2',
-    title: 'UI/UX 가이드라인',
-    description: '대시보드 UI 컴포넌트 사용 가이드',
-    type: 'guide',
-    fileName: 'ui-ux-guidelines.pdf',
-    fileSize: 1843200,
-    fileType: 'application/pdf',
-    createdAt: '2026-01-14',
-    updatedAt: '2026-01-22',
-  },
-  {
-    id: '5',
-    projectId: '3',
-    title: 'REST API 명세서',
-    description: 'API 엔드포인트 및 요청/응답 스키마',
-    type: 'api',
-    fileName: 'api-specification.json',
-    fileSize: 524288,
-    fileType: 'application/json',
-    createdAt: '2026-01-05',
-    updatedAt: '2026-01-19',
-  },
-  {
-    id: '6',
-    projectId: '3',
-    title: '데이터베이스 스키마',
-    description: 'DB 테이블 구조 및 관계도',
-    type: 'spec',
-    fileName: 'database-schema.sql',
-    fileSize: 307200,
-    fileType: 'application/sql',
-    createdAt: '2026-01-07',
-    updatedAt: '2026-01-16',
-  },
-];
+async function apiFetch<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
+  const res = await fetch(input, init);
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(text || `HTTP ${res.status}`);
+  }
+  const contentType = res.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    return res.json() as Promise<T>;
+  }
+  return null as unknown as T;
+}
+
+// Simple fetch projects (Assuming existing logic or similar endpoint available)
+// Using /api/projects endpoint
+async function fetchProjectsSimple(): Promise<Project[]> {
+  const data = await apiFetch<Array<{ id: number; name: string }>>(`${API_BASE}/projects`);
+  return (data || []).map((p) => ({ id: String(p.id), name: p.name }));
+}
 
 export default function DocumentsView() {
-  const [documents, setDocuments] = useState<Document[]>(initialDocuments);
+  const [documents, setDocuments] = useState<DocumentResponse[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
   const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
+
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingDocument, setEditingDocument] = useState<Document | null>(null);
-  const [newDocument, setNewDocument] = useState<Partial<Document>>({
+
+  // Edit / Add state
+  const [editingDocument, setEditingDocument] = useState<DocumentResponse | null>(null);
+  const [newDocument, setNewDocument] = useState<{
+    title: string;
+    description: string;
+    projectId: string;
+    docType: string;
+  }>({
     title: '',
     description: '',
     projectId: '',
-    type: 'guide',
-    fileName: '',
-    fileSize: 0,
-    fileType: '',
+    docType: 'guide',
   });
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [editSelectedFile, setEditSelectedFile] = useState<File | null>(null);
 
-  const filteredDocuments =
-    selectedProjectId === 'all'
-      ? documents
-      : documents.filter((doc) => doc.projectId === selectedProjectId);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // --- Initial Load ---
+  useEffect(() => {
+    fetchProjectsSimple()
+      .then(setProjects)
+      .catch((e) => console.error("Projects load failed", e));
+  }, []);
+
+  // --- Load Documents ---
+  useEffect(() => {
+    if (projects.length > 0) {
+      fetchDocuments();
+    }
+  }, [selectedProjectId, projects]); // Re-fetch when projects loaded or selection changes
+
+  // --- Handlers ---
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      setNewDocument({
-        ...newDocument,
-        fileName: file.name,
-        fileSize: file.size,
-        fileType: file.type,
-      });
+    if (file) setSelectedFile(file);
+  };
+
+  // Helper to re-fetch documents
+  const fetchDocuments = async () => {
+    try {
+      setLoading(true);
+      let docs: DocumentResponse[] = [];
+      if (selectedProjectId === 'all') {
+        if (projects.length > 0) {
+          const promises = projects.map(p =>
+            apiFetch<DocumentResponse[]>(`${API_BASE}/projects/${p.id}/documents`)
+          );
+          const results = await Promise.all(promises);
+          docs = results.flat();
+        }
+      } else {
+        docs = await apiFetch<DocumentResponse[]>(`${API_BASE}/projects/${selectedProjectId}/documents`);
+      }
+      docs.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      setDocuments(docs);
+    } catch (e: any) {
+      setErrorMsg(`문서 목록 로드 실패: ${e?.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleEditFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && editingDocument) {
-      setEditSelectedFile(file);
-      setEditingDocument({
-        ...editingDocument,
-        fileName: file.name,
-        fileSize: file.size,
-        fileType: file.type,
-      });
-    }
-  };
-
-  const handleAddDocument = () => {
-    if (!newDocument.title || !newDocument.projectId || !newDocument.fileName) {
+  const handleAddDocument = async () => {
+    if (!newDocument.title || !newDocument.projectId || !selectedFile) {
+      alert("필수 입력 항목을 확인하세요.");
       return;
     }
 
-    const now = new Date().toISOString().split('T')[0];
-    const document: Document = {
-      id: Date.now().toString(),
-      title: newDocument.title,
-      description: newDocument.description || '',
-      projectId: newDocument.projectId,
-      type: newDocument.type as 'spec' | 'design' | 'guide' | 'api' | 'other',
-      fileName: newDocument.fileName,
-      fileSize: newDocument.fileSize || 0,
-      fileType: newDocument.fileType || '',
-      createdAt: now,
-      updatedAt: now,
-    };
+    try {
+      setLoading(true);
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('title', newDocument.title);
+      formData.append('description', newDocument.description || '');
+      formData.append('docType', newDocument.docType);
 
-    setDocuments([...documents, document]);
-    setIsAddDialogOpen(false);
-    setSelectedFile(null);
-    setNewDocument({
-      title: '',
-      description: '',
-      projectId: '',
-      type: 'guide',
-      fileName: '',
-      fileSize: 0,
-      fileType: '',
-    });
-  };
+      await fetch(`${API_BASE}/projects/${newDocument.projectId}/documents`, {
+        method: 'POST',
+        body: formData,
+      });
 
-  const handleEditDocument = () => {
-    if (!editingDocument || !editingDocument.title || !editingDocument.projectId || !editingDocument.fileName) {
-      return;
+      setIsAddDialogOpen(false);
+      setNewDocument({ title: '', description: '', projectId: '', docType: 'guide' });
+      setSelectedFile(null);
+
+      // Refresh without page reload
+      await fetchDocuments();
+
+    } catch (e: any) {
+      alert(`업로드 실패: ${e.message}`);
+    } finally {
+      setLoading(false);
     }
-
-    const updatedDoc = {
-      ...editingDocument,
-      updatedAt: new Date().toISOString().split('T')[0],
-    };
-
-    setDocuments(documents.map((doc) => (doc.id === editingDocument.id ? updatedDoc : doc)));
-    setIsEditDialogOpen(false);
-    setEditingDocument(null);
-    setEditSelectedFile(null);
   };
 
-  const handleDeleteDocument = (id: string) => {
-    setDocuments(documents.filter((doc) => doc.id !== id));
+  const handleEditDocument = async () => {
+    if (!editingDocument) return;
+
+    try {
+      setLoading(true);
+      await apiFetch(`${API_BASE}/documents/${editingDocument.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: editingDocument.title,
+          description: editingDocument.description,
+          docType: editingDocument.docType,
+        })
+      });
+
+      setIsEditDialogOpen(false);
+      setEditingDocument(null);
+
+      // Refresh without page reload
+      await fetchDocuments();
+
+    } catch (e: any) {
+      alert(`수정 실패: ${e.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDownload = (document: Document) => {
-    // 실제 환경에서는 서버에서 파일을 다운로드하지만, 
-    // 여기서는 시뮬레이션으로 파일 다운로드를 표시
-    const blob = new Blob(['파일 내용 샘플'], { type: document.fileType });
-    const url = window.URL.createObjectURL(blob);
-    const link = window.document.createElement('a');
+  const handleDeleteDocument = async (id: number) => {
+    if (!confirm('정말 삭제하시겠습니까?')) return;
+    try {
+      await apiFetch(`${API_BASE}/documents/${id}`, { method: 'DELETE' });
+      setDocuments(prev => prev.filter(d => d.id !== id));
+    } catch (e: any) {
+      alert(`삭제 실패: ${e.message}`);
+    }
+  };
+
+  const handleDownload = (doc: DocumentResponse) => {
+    // Direct link to download endpoint
+    const url = `${API_BASE}/documents/${doc.id}/download`;
+    // Check if it works by opening in new tab or creating anchor
+    // creating anchor is better for download attribute
+    const link = document.createElement('a');
     link.href = url;
-    link.download = document.fileName;
+    link.download = doc.originalName;
+    document.body.appendChild(link);
     link.click();
-    window.URL.revokeObjectURL(url);
+    document.body.removeChild(link);
   };
 
-  const openEditDialog = (document: Document) => {
-    setEditingDocument({ ...document });
-    setEditSelectedFile(null);
-    setIsEditDialogOpen(true);
-  };
-
+  // --- Helpers ---
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
   };
 
-  const getTypeColor = (type: string) => {
+  const getProjectName = (id: number) => {
+    return projects.find((p) => Number(p.id) === id)?.name || '알 수 없음';
+  };
+
+  const getTypeBadgeClass = (type: string) => {
     switch (type) {
-      case 'spec':
-        return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'design':
-        return 'bg-purple-100 text-purple-700 border-purple-200';
-      case 'guide':
-        return 'bg-green-100 text-green-700 border-green-200';
-      case 'api':
-        return 'bg-orange-100 text-orange-700 border-orange-200';
-      case 'other':
-        return 'bg-gray-100 text-gray-700 border-gray-200';
-      default:
-        return 'bg-gray-100 text-gray-700 border-gray-200';
+      case 'spec': return styles.badgeSpec;
+      case 'design': return styles.badgeDesign;
+      case 'guide': return styles.badgeGuide;
+      case 'api': return styles.badgeApi;
+      default: return styles.badgeOther;
     }
   };
 
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case 'spec':
-        return '명세서';
-      case 'design':
-        return '디자인';
-      case 'guide':
-        return '가이드';
-      case 'api':
-        return 'API';
-      case 'other':
-        return '기타';
-      default:
-        return type;
+      case 'spec': return '명세서';
+      case 'design': return '디자인';
+      case 'guide': return '가이드';
+      case 'api': return 'API';
+      default: return '기타';
     }
   };
 
-  const getProjectName = (projectId: string) => {
-    return projects.find((p) => p.id === projectId)?.name || '알 수 없음';
-  };
+  const openEditDialog = (doc: DocumentResponse) => {
+    setEditingDocument({ ...doc });
+    setIsEditDialogOpen(true);
+  }
 
   return (
-    <div className="h-full px-6 py-6 overflow-y-auto">
+    <div className={styles.wrapper}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className={styles.header}>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">문서</h1>
-          <p className="text-gray-600 mt-1">프로젝트별 문서를 관리하고 공유하세요</p>
+          <h1 className={styles.headerTitle}>문서</h1>
+          <p className={styles.headerSubtitle}>프로젝트별 문서를 관리하고 공유하세요</p>
         </div>
+
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700">
+            <Button className={styles.primaryBtn}>
               <Plus className="w-4 h-4 mr-2" />
               새 문서
             </Button>
           </DialogTrigger>
+
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>새 문서 추가</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
+
+            <div className={styles.dialogBody}>
+              <div className={styles.field}>
                 <Label htmlFor="add-doc-title">문서 제목 *</Label>
                 <Input
                   id="add-doc-title"
@@ -305,8 +294,8 @@ export default function DocumentsView() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
+              <div className={styles.grid2}>
+                <div className={styles.field}>
                   <Label htmlFor="add-doc-project">프로젝트 *</Label>
                   <Select
                     value={newDocument.projectId}
@@ -325,13 +314,11 @@ export default function DocumentsView() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
+                <div className={styles.field}>
                   <Label htmlFor="add-doc-type">문서 유형</Label>
                   <Select
-                    value={newDocument.type}
-                    onValueChange={(value) =>
-                      setNewDocument({ ...newDocument, type: value as any })
-                    }
+                    value={newDocument.docType}
+                    onValueChange={(value) => setNewDocument({ ...newDocument, docType: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -347,26 +334,20 @@ export default function DocumentsView() {
                 </div>
               </div>
 
-              <div className="space-y-2">
+              <div className={styles.field}>
                 <Label htmlFor="add-doc-file">파일 첨부 *</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="add-doc-file"
-                    type="file"
-                    onChange={handleFileSelect}
-                    className="cursor-pointer"
-                  />
-                </div>
+                <Input id="add-doc-file" type="file" onChange={handleFileSelect} className={styles.fileInput} />
+
                 {selectedFile && (
-                  <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-                    <File className="w-4 h-4 text-gray-600" />
-                    <span className="text-sm text-gray-700">{selectedFile.name}</span>
-                    <span className="text-xs text-gray-500">({formatFileSize(selectedFile.size)})</span>
+                  <div className={styles.fileInfo}>
+                    <FileIcon className="w-4 h-4 text-gray-600" />
+                    <span className={styles.fileName}>{selectedFile.name}</span>
+                    <span className={styles.fileSize}>({formatFileSize(selectedFile.size)})</span>
                   </div>
                 )}
               </div>
 
-              <div className="space-y-2">
+              <div className={styles.field}>
                 <Label htmlFor="add-doc-description">설명</Label>
                 <Textarea
                   id="add-doc-description"
@@ -377,49 +358,58 @@ export default function DocumentsView() {
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-3">
+
+            <div className={styles.dialogFooter}>
               <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                 취소
               </Button>
-              <Button onClick={handleAddDocument} className="bg-blue-600 hover:bg-blue-700">
-                추가
+              <Button onClick={handleAddDocument} className={styles.primaryBtn} disabled={loading}>
+                {loading ? '업로드 중...' : '추가'}
               </Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
+      {loading && <p className="text-sm text-gray-500 mb-4 ml-1">로딩 중...</p>}
+      {errorMsg && <p className="text-sm text-red-500 mb-4 ml-1">{errorMsg}</p>}
+
       {/* Stats & Filter */}
-      <div className="grid grid-cols-5 gap-4 mb-6">
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="text-sm text-gray-600">전체 문서</div>
-          <div className="text-2xl font-bold text-gray-900 mt-1">{filteredDocuments.length}</div>
+      <div className={styles.statsGrid}>
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>전체 문서</div>
+          <div className={styles.cardValue}>{documents.length}</div>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="text-sm text-gray-600">명세서</div>
-          <div className="text-2xl font-bold text-blue-600 mt-1">
-            {filteredDocuments.filter((d) => d.type === 'spec').length}
+
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>명세서</div>
+          <div className={`${styles.cardValue} ${styles.blue}`}>
+            {documents.filter((d) => d.docType === 'spec').length}
           </div>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="text-sm text-gray-600">가이드</div>
-          <div className="text-2xl font-bold text-green-600 mt-1">
-            {filteredDocuments.filter((d) => d.type === 'guide').length}
+
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>가이드</div>
+          <div className={`${styles.cardValue} ${styles.green}`}>
+            {documents.filter((d) => d.docType === 'guide').length}
           </div>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="text-sm text-gray-600">API 문서</div>
-          <div className="text-2xl font-bold text-orange-600 mt-1">
-            {filteredDocuments.filter((d) => d.type === 'api').length}
+
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>API 문서</div>
+          <div className={`${styles.cardValue} ${styles.orange}`}>
+            {documents.filter((d) => d.docType === 'api').length}
           </div>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <Label htmlFor="project-filter" className="text-sm text-gray-600 flex items-center gap-2">
+
+        <div className={styles.card}>
+          <Label htmlFor="project-filter" className={`${styles.cardLabel} ${styles.filterLabel}`}>
             <Filter className="w-4 h-4" />
             프로젝트 필터
           </Label>
+
           <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-            <SelectTrigger id="project-filter" className="mt-2">
+            <SelectTrigger id="project-filter" className={styles.filterSelect}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -435,38 +425,36 @@ export default function DocumentsView() {
       </div>
 
       {/* Documents Grid */}
-      {/*<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">*/}
-      <div className="grid grid-cols-2 lg:grid-cols-2 gap-4">
-        {filteredDocuments.map((document) => (
-          <div
-            key={document.id}
-            className="bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition-shadow group"
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
+      <div className={styles.docsGrid}>
+        {documents.map((document) => (
+          <div key={document.id} className={styles.docCard}>
+            <div className={styles.docHeader}>
+              <div style={{ flex: 1 }}>
+                <div className={styles.docTitleRow}>
                   <FileText className="w-5 h-5 text-gray-600" />
-                  <h3 className="font-semibold text-lg text-gray-900">{document.title}</h3>
+                  <h3 className={styles.docTitle}>{document.title}</h3>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className={getTypeColor(document.type)}>
-                    {getTypeLabel(document.type)}
+                  <Badge variant="outline" className={getTypeBadgeClass(document.docType)}>
+                    {getTypeLabel(document.docType)}
                   </Badge>
                 </div>
               </div>
-              <div className="flex items-center gap-1">
+
+              <div className={styles.actions}>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  className={styles.iconBtn}
                   onClick={() => openEditDialog(document)}
                 >
                   <Edit2 className="w-4 h-4" />
                 </Button>
+
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
                   onClick={() => handleDeleteDocument(document.id)}
                 >
                   <Trash2 className="w-4 h-4" />
@@ -474,31 +462,29 @@ export default function DocumentsView() {
               </div>
             </div>
 
-            <p className="text-sm text-gray-600 mb-3 line-clamp-2">{document.description}</p>
+            <p className={styles.desc}>{document.description}</p>
 
-            <div className="space-y-2 mb-3">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className={styles.meta}>
+              <div className={styles.metaRow}>
                 <Tag className="w-4 h-4" />
                 <span>{getProjectName(document.projectId)}</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <File className="w-4 h-4" />
-                <span className="flex-1 truncate">{document.fileName}</span>
-                <span className="text-xs text-gray-500">({formatFileSize(document.fileSize)})</span>
+
+              <div className={styles.metaRow}>
+                <FileIcon className="w-4 h-4" />
+                <span className={styles.truncate}>{document.originalName}</span>
+                <span className={styles.fileSize}>({formatFileSize(document.fileSize)})</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
+
+              <div className={styles.metaRow}>
                 <Calendar className="w-4 h-4" />
-                <span>최종 수정: {document.updatedAt}</span>
+                <span>최종 수정: {new Date(document.updatedAt).toLocaleDateString()}</span>
               </div>
             </div>
 
-            <div className="pt-3 border-t border-gray-200">
-              <Button
-                onClick={() => handleDownload(document)}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                size="sm"
-              >
-                <Download className="w-4 h-4 mr-2" />
+            <div className={styles.footer}>
+              <Button onClick={() => handleDownload(document)} size="sm" className={styles.downloadBtn}>
+                <Download className="w-3 h-3 mr-2" />
                 다운로드
               </Button>
             </div>
@@ -506,9 +492,9 @@ export default function DocumentsView() {
         ))}
       </div>
 
-      {filteredDocuments.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500">문서가 없습니다. 새 문서를 추가해보세요!</p>
+      {documents.length === 0 && !loading && (
+        <div className={styles.empty}>
+          <p>문서가 없습니다. 새 문서를 추가해보세요!</p>
         </div>
       )}
 
@@ -518,9 +504,10 @@ export default function DocumentsView() {
           <DialogHeader>
             <DialogTitle>문서 수정</DialogTitle>
           </DialogHeader>
+
           {editingDocument && (
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
+            <div className={styles.dialogBody}>
+              <div className={styles.field}>
                 <Label htmlFor="edit-doc-title">문서 제목 *</Label>
                 <Input
                   id="edit-doc-title"
@@ -530,14 +517,12 @@ export default function DocumentsView() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-doc-project">프로젝트 *</Label>
+              <div className={styles.grid2}>
+                <div className={styles.field}>
+                  <Label htmlFor="edit-doc-project">프로젝트</Label>
                   <Select
-                    value={editingDocument.projectId}
-                    onValueChange={(value) =>
-                      setEditingDocument({ ...editingDocument, projectId: value })
-                    }
+                    value={String(editingDocument.projectId)}
+                    disabled
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -552,13 +537,11 @@ export default function DocumentsView() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
+                <div className={styles.field}>
                   <Label htmlFor="edit-doc-type">문서 유형</Label>
                   <Select
-                    value={editingDocument.type}
-                    onValueChange={(value) =>
-                      setEditingDocument({ ...editingDocument, type: value as any })
-                    }
+                    value={editingDocument.docType}
+                    onValueChange={(value) => setEditingDocument({ ...editingDocument, docType: value as any })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -574,49 +557,24 @@ export default function DocumentsView() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="edit-doc-file">파일 변경 (선택사항)</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="edit-doc-file"
-                    type="file"
-                    onChange={handleEditFileSelect}
-                    className="cursor-pointer"
-                  />
-                </div>
-                <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-                  <File className="w-4 h-4 text-gray-600" />
-                  <span className="text-sm text-gray-700">{editingDocument.fileName}</span>
-                  <span className="text-xs text-gray-500">({formatFileSize(editingDocument.fileSize)})</span>
-                </div>
-                {editSelectedFile && (
-                  <div className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
-                    <Upload className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm text-blue-700">새 파일: {editSelectedFile.name}</span>
-                    <span className="text-xs text-blue-600">({formatFileSize(editSelectedFile.size)})</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
+              <div className={styles.field}>
                 <Label htmlFor="edit-doc-description">설명</Label>
                 <Textarea
                   id="edit-doc-description"
                   placeholder="문서 설명을 입력하세요"
                   rows={3}
                   value={editingDocument.description}
-                  onChange={(e) =>
-                    setEditingDocument({ ...editingDocument, description: e.target.value })
-                  }
+                  onChange={(e) => setEditingDocument({ ...editingDocument, description: e.target.value })}
                 />
               </div>
             </div>
           )}
-          <div className="flex justify-end gap-3">
+
+          <div className={styles.dialogFooter}>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
               취소
             </Button>
-            <Button onClick={handleEditDocument} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={handleEditDocument} className={styles.primaryBtn}>
               저장
             </Button>
           </div>

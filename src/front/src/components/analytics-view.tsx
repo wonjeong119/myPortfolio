@@ -1,223 +1,244 @@
-import { useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Calendar, CheckCircle2, TrendingUp } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
+import { Calendar, CheckCircle2, TrendingUp, ListTodo, ClipboardList } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
 
-// 월별 완료 작업 데이터
-const monthlyData = [
-  { month: '1월', completed: 12 },
-  { month: '2월', completed: 8 },
-  { month: '3월', completed: 15 },
-  { month: '4월', completed: 10 },
-  { month: '5월', completed: 18 },
-  { month: '6월', completed: 14 },
-];
+import styles from './analytics-view.module.css';
 
-// 주별 완료 작업 데이터 (최근 8주)
-const weeklyData = [
-  { week: '1주차', completed: 5 },
-  { week: '2주차', completed: 3 },
-  { week: '3주차', completed: 7 },
-  { week: '4주차', completed: 4 },
-  { week: '5주차', completed: 6 },
-  { week: '6주차', completed: 8 },
-  { week: '7주차', completed: 5 },
-  { week: '8주차', completed: 9 },
-];
+// --- Types ---
+interface AnalyticsSummary {
+  totalTasks: number;
+  completedTasks: number;
+  remainingTasks: number;
+  completionRate: number;
+}
 
-// 일별 완료 작업 데이터 (최근 7일)
-const dailyData = [
-  { day: '월', completed: 2 },
-  { day: '화', completed: 3 },
-  { day: '수', completed: 1 },
-  { day: '목', completed: 4 },
-  { day: '금', completed: 3 },
-  { day: '토', completed: 0 },
-  { day: '일', completed: 1 },
-];
+interface ChartData {
+  label: string;
+  value: number;
+}
 
-// 프로젝트별 완료 작업 비율
-const projectData = [
-  { name: '포트폴리오 웹사이트', value: 35, color: '#3b82f6' },
-  { name: 'React 대시보드', value: 28, color: '#8b5cf6' },
-  { name: 'REST API 서버', value: 22, color: '#10b981' },
-  { name: '모바일 앱 프로토타입', value: 15, color: '#f59e0b' },
-];
+interface ProjectStat {
+  projectName: string;
+  completedCount: number;
+  totalCount: number;
+  completionRate: number;
+}
 
-// 우선순위별 완료 작업
-const priorityData = [
-  { priority: '높음', completed: 18, color: '#ef4444' },
-  { priority: '중간', completed: 25, color: '#f59e0b' },
-  { priority: '낮음', completed: 12, color: '#10b981' },
-];
+interface PriorityStat {
+  priority: string;
+  count: number;
+}
 
-// 최근 완료한 작업 목록
-const recentCompletedTasks = [
-  {
-    id: '1',
-    title: '홈페이지 디자인 완성',
-    project: '포트폴리오 웹사이트',
-    completedAt: '2026-01-20',
-    priority: 'high',
-  },
-  {
-    id: '2',
-    title: '대시보드 레이아웃 설계',
-    project: 'React 대시보드',
-    completedAt: '2026-01-19',
-    priority: 'medium',
-  },
-  {
-    id: '3',
-    title: 'API 문서 작성',
-    project: 'REST API 서버',
-    completedAt: '2026-01-18',
-    priority: 'high',
-  },
-  {
-    id: '4',
-    title: '테스트 코드 작성',
-    project: 'React 대시보드',
-    completedAt: '2026-01-17',
-    priority: 'medium',
-  },
-  {
-    id: '5',
-    title: '반응형 레이아웃 구현',
-    project: '포트폴리오 웹사이트',
-    completedAt: '2026-01-16',
-    priority: 'low',
-  },
-];
+interface TaskResponse {
+  projectId: number;
+  taskId: number;
+  title: string;
+  description: string;
+  completed: boolean;
+  priority: string;
+  deadline: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+type TimeRange = 'daily' | 'weekly' | 'monthly';
+
+// --- API Helper ---
+const API_BASE = 'http://localhost:8080/api/analytics';
+
+async function apiFetch<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
+  const res = await fetch(input, init);
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}`);
+  }
+  return res.json() as Promise<T>;
+}
 
 export default function AnalyticsView() {
-  const [timeRange, setTimeRange] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
+  const [timeRange, setTimeRange] = useState<TimeRange>('weekly');
 
-  const getChartData = () => {
-    switch (timeRange) {
-      case 'daily':
-        return dailyData;
-      case 'weekly':
-        return weeklyData;
-      case 'monthly':
-        return monthlyData;
-      default:
-        return weeklyData;
-    }
-  };
+  const [summary, setSummary] = useState<AnalyticsSummary>({
+    totalTasks: 0,
+    completedTasks: 0,
+    remainingTasks: 0,
+    completionRate: 0,
+  });
+
+  const [chartData, setChartData] = useState<ChartData[]>([]);
+  const [projectStats, setProjectStats] = useState<ProjectStat[]>([]);
+  const [priorityStats, setPriorityStats] = useState<PriorityStat[]>([]);
+  const [recentTasks, setRecentTasks] = useState<TaskResponse[]>([]);
+
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  // 1. Initial Load of Summary, Projects, Priorities, Recent Tasks
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        setLoading(true);
+        const [sum, projects, priorities, recents] = await Promise.all([
+          apiFetch<AnalyticsSummary>(`${API_BASE}/summary`),
+          apiFetch<ProjectStat[]>(`${API_BASE}/projects`),
+          apiFetch<PriorityStat[]>(`${API_BASE}/priorities`),
+          apiFetch<TaskResponse[]>(`${API_BASE}/recent`),
+        ]);
+
+        setSummary(sum);
+        setProjectStats(projects);
+        setPriorityStats(priorities);
+        setRecentTasks(recents);
+      } catch (e: any) {
+        setErrorMsg(`데이터 로딩 실패: ${e?.message || '오류'}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadInitialData();
+  }, []);
+
+  // 2. Load Chart Data when timeRange changes
+  useEffect(() => {
+    const loadChartData = async () => {
+      try {
+        let data: ChartData[] = [];
+        if (timeRange === 'daily') {
+          data = await apiFetch<ChartData[]>(`${API_BASE}/daily`);
+        } else if (timeRange === 'weekly') {
+          data = await apiFetch<ChartData[]>(`${API_BASE}/weekly`);
+        } else {
+          data = await apiFetch<ChartData[]>(`${API_BASE}/monthly`);
+        }
+        setChartData(data);
+      } catch (e: any) {
+        console.error("Chart data loading failed", e);
+      }
+    };
+
+    loadChartData();
+  }, [timeRange]);
 
   const getTimeLabel = () => {
     switch (timeRange) {
-      case 'daily':
-        return '일별';
-      case 'weekly':
-        return '주별';
-      case 'monthly':
-        return '월별';
-      default:
-        return '주별';
+      case 'daily': return '일별';
+      case 'weekly': return '주별';
+      case 'monthly': return '월별';
+      default: return '주별';
     }
   };
 
-  const getTotalCompleted = () => {
-    const data = getChartData();
-    return data.reduce((sum, item) => sum + item.completed, 0);
-  };
-
-  const getAverageCompleted = () => {
-    const data = getChartData();
-    return Math.round(data.reduce((sum, item) => sum + item.completed, 0) / data.length);
-  };
-
-  const getPriorityColor = (priority: string) => {
+  const getPriorityBadgeClass = (priority: string) => {
     switch (priority) {
-      case 'high':
-        return 'bg-red-100 text-red-700 border-red-200';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      case 'low':
-        return 'bg-green-100 text-green-700 border-green-200';
-      default:
-        return 'bg-gray-100 text-gray-700 border-gray-200';
+      case 'high': return styles.badgeHigh;
+      case 'medium': return styles.badgeMedium;
+      case 'low': return styles.badgeLow;
+      default: return styles.badgeDefault;
     }
   };
 
   const getPriorityLabel = (priority: string) => {
     switch (priority) {
-      case 'high':
-        return '높음';
-      case 'medium':
-        return '중간';
-      case 'low':
-        return '낮음';
-      default:
-        return priority;
+      case 'high': return '높음';
+      case 'medium': return '중간';
+      case 'low': return '낮음';
+      default: return priority;
     }
   };
 
+  const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
+  const PRIORITY_COLORS: Record<string, string> = {
+    high: '#ef4444',
+    medium: '#f59e0b',
+    low: '#10b981',
+  };
+
   return (
-    <div className="h-full px-6 py-6 overflow-y-auto">
+    <div className={styles.wrapper}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">분석</h1>
-          <p className="text-gray-600 mt-1">작업 완료 현황과 생산성을 분석하세요</p>
+      <div className={styles.header}>
+        <div className={styles.titleWrap}>
+          <h1 className={styles.title}>분석</h1>
+          <p className={styles.subtitle}>작업 완료 현황과 생산성을 분석하세요</p>
         </div>
+
         <Select value={timeRange} onValueChange={(value: any) => setTimeRange(value)}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className={styles.timeSelect}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="daily">일별</SelectItem>
-            <SelectItem value="weekly">주별</SelectItem>
-            <SelectItem value="monthly">월별</SelectItem>
+            <SelectItem value="daily">일별 (최근 7일)</SelectItem>
+            <SelectItem value="weekly">주별 (최근 8주)</SelectItem>
+            <SelectItem value="monthly">월별 (올해)</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
+      {loading && <p className="text-sm text-gray-500 mb-4">데이터 불러오는 중...</p>}
+      {errorMsg && <p className="text-sm text-red-500 mb-4">{errorMsg}</p>}
+
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+      <div className={styles.statsGrid}>
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>
+            <ClipboardList className="w-4 h-4" />
+            총 작업
+          </div>
+          <div className={styles.cardValue}>{summary.totalTasks}</div>
+          <div className={styles.cardHint}>전체 등록된 작업</div>
+        </div>
+
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>
             <CheckCircle2 className="w-4 h-4" />
-            총 완료 작업
+            완료된 작업
           </div>
-          <div className="text-2xl font-bold text-gray-900">{getTotalCompleted()}</div>
-          <div className="text-xs text-gray-500 mt-1">{getTimeLabel()} 기준</div>
+          <div className={`${styles.cardValue} ${styles.valueBlue}`}>{summary.completedTasks}</div>
+          <div className={styles.cardHint}>전체 완료</div>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center gap-2 text-sm text-gray-600 mb-1">
+
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>
+            <ListTodo className="w-4 h-4" />
+            남은 작업
+          </div>
+          <div className={`${styles.cardValue} ${styles.valueOrange}`}>{summary.remainingTasks}</div>
+          <div className={styles.cardHint}>진행 중</div>
+        </div>
+
+        <div className={styles.card}>
+          <div className={styles.cardLabel}>
             <TrendingUp className="w-4 h-4" />
-            평균 완료 작업
+            완료율
           </div>
-          <div className="text-2xl font-bold text-blue-600">{getAverageCompleted()}</div>
-          <div className="text-xs text-gray-500 mt-1">기간당 평균</div>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="text-sm text-gray-600 mb-1">완료율</div>
-          <div className="text-2xl font-bold text-green-600">78%</div>
-          <div className="text-xs text-gray-500 mt-1">전체 작업 대비</div>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="text-sm text-gray-600 mb-1">생산성 점수</div>
-          <div className="text-2xl font-bold text-purple-600">92</div>
-          <div className="text-xs text-green-600 mt-1">↑ 12% 증가</div>
+          <div className={`${styles.cardValue} ${styles.valueGreen}`}>{summary.completionRate}%</div>
+          <div className={styles.cardHint}>전체 대비 완료</div>
         </div>
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        {/* 완료 작업 추이 차트 */}
-        <div className="col-span-2 bg-white rounded-lg border border-gray-200 p-5">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            완료 작업 추이 ({getTimeLabel()})
-          </h2>
+      <div className={styles.chartsGrid}>
+        <div className={`${styles.card} ${styles.colSpan2}`}>
+          <h2 className={styles.sectionTitle}>완료 작업 추이 ({getTimeLabel()})</h2>
+
           <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={getChartData()}>
+            <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis
-                dataKey={timeRange === 'daily' ? 'day' : timeRange === 'weekly' ? 'week' : 'month'}
+                dataKey="label"
                 tick={{ fontSize: 12 }}
               />
               <YAxis tick={{ fontSize: 12 }} />
@@ -228,67 +249,67 @@ export default function AnalyticsView() {
                   borderRadius: '8px',
                 }}
               />
-              <Bar dataKey="completed" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="value" name="완료 수" fill="#3b82f6" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* 프로젝트별 완료 비율 */}
-        <div className="bg-white rounded-lg border border-gray-200 p-5">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">프로젝트별 완료</h2>
+        <div className={styles.card}>
+          <h2 className={styles.sectionTitle}>프로젝트별 완료율</h2>
+
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie
-                data={projectData}
+                data={projectStats}
                 cx="50%"
                 cy="50%"
                 innerRadius={50}
                 outerRadius={80}
                 paddingAngle={5}
-                dataKey="value"
+                dataKey="completionRate"
+                nameKey="projectName"
               >
-                {projectData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
+                {projectStats.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip />
             </PieChart>
           </ResponsiveContainer>
-          <div className="mt-4 space-y-2">
-            {projectData.map((project) => (
-              <div key={project.name} className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: project.color }}
-                  />
-                  <span className="text-gray-700 text-xs">{project.name}</span>
+
+          <div className={styles.legendList}>
+            {projectStats.slice(0, 5).map((project, index) => (
+              <div key={project.projectName} className={styles.legendRow}>
+                <div className={styles.legendLeft}>
+                  <div className={styles.legendDot} style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                  <span className={styles.legendName}>{project.projectName}</span>
                 </div>
-                <span className="text-gray-900 font-medium">{project.value}%</span>
+                <span className={styles.legendValue}>{project.completionRate}%</span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* 우선순위별 완료 & 최근 완료 작업 */}
-      <div className="grid grid-cols-3 gap-4">
-        {/* 우선순위별 완료 작업 */}
-        <div className="bg-white rounded-lg border border-gray-200 p-5">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">우선순위별 완료</h2>
-          <div className="space-y-4">
-            {priorityData.map((item) => (
+      {/* Bottom Row */}
+      <div className={styles.bottomGrid}>
+        <div className={styles.card}>
+          <h2 className={styles.sectionTitle}>우선순위별 완료 분포</h2>
+
+          <div className={styles.priorityList}>
+            {priorityStats.map((item) => (
               <div key={item.priority}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">{item.priority}</span>
-                  <span className="text-sm font-bold text-gray-900">{item.completed}개</span>
+                <div className={styles.priorityHeader}>
+                  <span className={styles.priorityName}>{getPriorityLabel(item.priority)}</span>
+                  <span className={styles.priorityCount}>{item.count}개</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+
+                <div className={styles.progressTrack}>
                   <div
-                    className="h-2 rounded-full transition-all"
+                    className={styles.progressFill}
                     style={{
-                      width: `${(item.completed / 55) * 100}%`,
-                      backgroundColor: item.color,
+                      width: `${Math.min((item.count / summary.completedTasks) * 100, 100)}%`,
+                      backgroundColor: PRIORITY_COLORS[item.priority] || '#999',
                     }}
                   />
                 </div>
@@ -297,33 +318,41 @@ export default function AnalyticsView() {
           </div>
         </div>
 
-        {/* 최근 완료한 작업 */}
-        <div className="col-span-2 bg-white rounded-lg border border-gray-200 p-5">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">최근 완료한 작업</h2>
-          <div className="space-y-3">
-            {recentCompletedTasks.map((task) => (
-              <div
-                key={task.id}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <CheckCircle2 className="w-4 h-4 text-green-600" />
-                    <span className="font-medium text-gray-900">{task.title}</span>
+        <div className={`${styles.card} ${styles.colSpan2}`}>
+          <h2 className={styles.sectionTitle}>최근 완료한 작업</h2>
+
+          <div className={styles.recentList}>
+            {recentTasks.length === 0 ? (
+              <p className="text-gray-400 text-sm text-center py-4">완료된 작업이 없습니다.</p>
+            ) : (
+              recentTasks.map((task) => (
+                <div key={`${task.projectId}-${task.taskId}`} className={styles.recentItem}>
+                  <div className={styles.recentLeft}>
+                    <div className={styles.recentTitleRow}>
+                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                      <span className={styles.recentTitle}>{task.title}</span>
+                    </div>
+                    {/* We don't have project name in TaskResponse easily unless we join or fetch projects map.
+                              For now, we can hide it or show ID, or update backend to return project name in TaskResponse.
+                              Let's assume backend update or generic placeholders for now.
+                              Wait, I can use the same logic as tasks-view if I had the project list.
+                           */}
+                    <div className={styles.recentProject}>Project #{task.projectId}</div>
                   </div>
-                  <div className="text-xs text-gray-600 ml-6">{task.project}</div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Badge variant="outline" className={getPriorityColor(task.priority)}>
-                    {getPriorityLabel(task.priority)}
-                  </Badge>
-                  <div className="flex items-center gap-1 text-xs text-gray-500">
-                    <Calendar className="w-3 h-3" />
-                    {task.completedAt}
+
+                  <div className={styles.recentRight}>
+                    <Badge variant="outline" className={getPriorityBadgeClass(task.priority)}>
+                      {getPriorityLabel(task.priority)}
+                    </Badge>
+
+                    <div className={styles.dateRow}>
+                      <Calendar className="w-3 h-3" />
+                      {task.updatedAt ? new Date(task.updatedAt).toLocaleDateString() : '-'}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>

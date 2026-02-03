@@ -11,12 +11,17 @@ import ProjectsView from "./components/projects-view";
 import TasksView from "./components/tasks-view";
 import DocumentsView from "./components/documents-view";
 import AnalyticsView from "./components/analytics-view";
+import LoginView from './components/login-view';
 
 type Page = "home" | "projects" | "tasks" | "docs" | "analytics";
 
 export default function App() {
-    const [currentPage, setCurrentPage] = useState<Page>("home");
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [currentPage, setCurrentPage] = useState<'home' | 'projects' | 'tasks' | 'docs' | 'analytics'>('home');
 
+    if (!isLoggedIn) {
+        return <LoginView onLogin={() => setIsLoggedIn(true)} />;
+    }
     return (
         <div className="appRoot">
             <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} />

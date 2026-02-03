@@ -1,0 +1,134 @@
+.wrapper {
+    background: linear-gradient(135deg, #2563eb, #6d28d9); /* from-blue-600 to-purple-700 */
+    border-radius: 12px; /* rounded-xl */
+    padding: 24px; /* p-6 */
+    color: #ffffff;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.15); /* shadow-lg 느낌 */
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px; /* gap-6 */
+}
+
+@media (min-width: 1024px) {
+    .grid {
+        grid-template-columns: 1fr 2fr; /* lg:grid-cols-3 + chart col-span-2 느낌 */
+    }
+}
+
+.left {
+    display: grid;
+    gap: 16px; /* space-y-4 */
+}
+
+.title {
+    font-size: 24px; /* text-2xl */
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.cards {
+    display: grid;
+    gap: 12px; /* space-y-3 */
+}
+
+.statCard {
+    background: rgba(255, 255, 255, 0.1); /* bg-white/10 */
+    border: 1px solid rgba(255, 255, 255, 0.2); /* border-white/20 */
+    border-radius: 10px; /* rounded-lg */
+    padding: 16px; /* p-4 */
+    backdrop-filter: blur(10px); /* backdrop-blur-sm */
+}
+
+.statRow {
+    display: flex;
+    align-items: center;
+    gap: 12px; /* gap-3 */
+}
+
+.iconBox {
+    width: 48px; /* w-12 */
+    height: 48px; /* h-12 */
+    background: rgba(255, 255, 255, 0.2); /* bg-white/20 */
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.icon {
+    width: 24px; /* w-6 */
+    height: 24px; /* h-6 */
+    color: #ffffff;
+}
+
+.statBody {
+    flex: 1;
+}
+
+.statLabel {
+    font-size: 14px; /* text-sm */
+    color: #dbeafe; /* blue-100 */
+}
+
+.statValue {
+    font-size: 24px; /* text-2xl */
+    font-weight: 700;
+    margin-top: 2px;
+}
+
+.statSub {
+    font-size: 12px; /* text-xs */
+    color: #bfdbfe; /* blue-200 */
+    margin-top: 2px;
+}
+
+.subGood {
+    color: #bbf7d0; /* green-200 */
+}
+
+.chartCard {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 20px; /* p-5 */
+    backdrop-filter: blur(10px);
+}
+
+.chartHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 16px; /* mb-4 */
+}
+
+.chartTitle {
+    font-weight: 600;
+}
+
+.chartSub {
+    font-size: 12px; /* text-xs */
+    color: #dbeafe; /* blue-100 */
+    margin-top: 4px;
+}
+
+.trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px; /* gap-2 */
+    font-size: 14px; /* text-sm */
+}
+
+.trendIcon {
+    width: 16px; /* w-4 */
+    height: 16px; /* h-4 */
+    color: #86efac; /* green-300 */
+}
+
+.trendText {
+    color: #86efac; /* green-300 */
+    font-weight: 600;
+}
