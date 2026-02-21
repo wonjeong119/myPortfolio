@@ -12,19 +12,25 @@ import TasksView from "./components/tasks-view";
 import DocumentsView from "./components/documents-view";
 import AnalyticsView from "./components/analytics-view";
 import LoginView from './components/login-view';
+import { isAuthenticated, logout } from './api';
 
 type Page = "home" | "projects" | "tasks" | "docs" | "analytics";
 
 export default function App() {
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(isAuthenticated());
     const [currentPage, setCurrentPage] = useState<'home' | 'projects' | 'tasks' | 'docs' | 'analytics'>('home');
+
+    const handleLogout = () => {
+        logout();
+        setIsLoggedIn(false);
+    };
 
     if (!isLoggedIn) {
         return <LoginView onLogin={() => setIsLoggedIn(true)} />;
     }
     return (
         <div className="appRoot">
-            <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} />
+            <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} onLogout={handleLogout} />
 
             <div className="appShell">
                 <div className="appMain">

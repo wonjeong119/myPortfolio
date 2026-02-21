@@ -1,11 +1,12 @@
 // ✅ 추가
 import "./sidebar.css";
 
-import { Home, Briefcase, CheckSquare, FileText, BarChart3, Settings } from "lucide-react";
+import { Home, Briefcase, CheckSquare, FileText, BarChart3, LogOut } from "lucide-react";
 
 interface SidebarProps {
     currentPage: "home" | "projects" | "tasks" | "docs" | "analytics";
     onPageChange: (page: "home" | "projects" | "tasks" | "docs" | "analytics") => void;
+    onLogout?: () => void;
 }
 
 const menuItems = [
@@ -16,7 +17,7 @@ const menuItems = [
     { icon: BarChart3, label: "분석", page: "analytics" as const },
 ];
 
-export default function Sidebar({ currentPage, onPageChange }: SidebarProps) {
+export default function Sidebar({ currentPage, onPageChange, onLogout }: SidebarProps) {
     return (
         // CSS 클래스
         <aside className="sidebar">
@@ -53,9 +54,9 @@ export default function Sidebar({ currentPage, onPageChange }: SidebarProps) {
 
             {/* Settings at bottom */}
             <div className="sidebarBottom">
-                <button className="sidebarBtn sidebarBtnIdle" type="button">
-                    <Settings className="sidebarIcon" />
-                    <span className="sidebarLabel">설정</span>
+                <button className="sidebarBtn sidebarBtnIdle" type="button" onClick={onLogout}>
+                    <LogOut className="sidebarIcon" />
+                    <span className="sidebarLabel">로그아웃</span>
                 </button>
             </div>
         </aside>

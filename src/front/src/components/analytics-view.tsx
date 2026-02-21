@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { authFetchJson } from '../api';
 import {
   BarChart,
   Bar,
@@ -57,14 +58,10 @@ interface TaskResponse {
 type TimeRange = 'daily' | 'weekly' | 'monthly';
 
 // --- API Helper ---
-const API_BASE = 'http://localhost:8080/api/analytics';
+const API_BASE = '/api/analytics';
 
 async function apiFetch<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  const res = await fetch(input, init);
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}`);
-  }
-  return res.json() as Promise<T>;
+  return authFetchJson<T>(input, init);
 }
 
 export default function AnalyticsView() {

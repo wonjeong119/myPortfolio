@@ -3,6 +3,7 @@ import { Eye, EyeOff, Lock, Mail, ArrowRight } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { loginApi } from '../api';
 
 import styles from './login-view.module.css';
 import * as React from "react";
@@ -16,23 +17,23 @@ export default function LoginView({ onLogin }: LoginViewProps) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(false);
+    setError('');
 
     if (!email || !password) return;
 
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      await loginApi(email, password);
+      onLogin();
+    } catch (err: any) {
+      setError(err?.message || '아이디 또는 비밀번호가 올바르지 않습니다.');
+    } finally {
       setIsLoading(false);
-      if (email === 'admin' && password === 'admin') {
-        onLogin();
-      } else {
-        setError(true);
-      }
-    }, 800);
+    }
   };
 
   return (
@@ -85,7 +86,7 @@ export default function LoginView({ onLogin }: LoginViewProps) {
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
+                  placeholder=""
                   className={`${styles.inputPl10} ${styles.inputPr10}`}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -106,7 +107,7 @@ export default function LoginView({ onLogin }: LoginViewProps) {
             {/* Submit */}
             {error && (
               <div className={styles.errorMessage}>
-                아이디 또는 비밀번호가 올바르지 않습니다.
+                {error}
               </div>
             )}
             <Button

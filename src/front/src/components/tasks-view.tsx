@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2, Edit2, Calendar, Tag, Filter } from 'lucide-react';
+import { authFetchJson } from '../api';
 
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
@@ -31,17 +32,10 @@ interface Project {
   name: string;
 }
 
-const API_BASE = 'http://localhost:8080/api/projects';
+const API_BASE = '/api/projects';
 
 async function apiFetch<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  const res = await fetch(input, init);
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(text || `HTTP ${res.status}`);
-  }
-  const contentType = res.headers.get('content-type') || '';
-  if (!contentType.includes('application/json')) return undefined as T;
-  return res.json() as Promise<T>;
+  return authFetchJson<T>(input, init);
 }
 
 async function fetchProjectsSimple(): Promise<Project[]> {
@@ -85,7 +79,7 @@ async function deleteTask(projectId: number, taskId: number): Promise<void> {
 }
 
 async function fetchAllTasks(): Promise<Task[]> {
-  return apiFetch<Task[]>(`http://localhost:8080/api/tasks`);
+  return apiFetch<Task[]>(`/api/tasks`);
 }
 
 export default function TasksView() {

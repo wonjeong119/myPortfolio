@@ -2,6 +2,7 @@ import "./calendar-panel.css";
 import { ChevronLeft, ChevronRight, Clock, X, Trash2, CheckCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import * as React from "react";
+import { authFetchJson } from "../api";
 
 type EventType = "meeting" | "deadline" | "presentation" | "today" | "review" | "task";
 
@@ -117,11 +118,9 @@ export default function CalendarPanel() {
     if (!ok) return;
 
     try {
-      const res = await fetch(`${API_BASE}/api/calendar/${id}`, {
+      await authFetchJson(`${API_BASE}/api/calendar/${id}`, {
         method: "DELETE",
       });
-
-      if (!res.ok) throw new Error(await res.text());
 
       setEvents((prev) => prev.filter((e) => e.id !== id));
       await fetchEvents();
@@ -153,44 +152,36 @@ export default function CalendarPanel() {
       const start = `${currentYear}-${String(month).padStart(2, "0")}-01`;
       const end = `${currentYear}-${String(month).padStart(2, "0")}-${String(daysInMonth).padStart(2, "0")}`;
 
-      // 1. 캘린더 이벤트 조회
-      const calRes = await fetch(`${API_BASE}/api/calendar?start=${start}&end=${end}`);
       let uiEvents: CalendarEvent[] = [];
 
-      if (calRes.ok) {
-        const data: ApiEvent[] = await calRes.json();
-        uiEvents = data.map(mapApiToUi);
-      }
+      // 1. 캘린더 이벤트 조회
+      const data: ApiEvent[] = await authFetchJson<ApiEvent[]>(`${API_BASE}/api/calendar?start=${start}&end=${end}`);
+      uiEvents = data.map(mapApiToUi);
 
       // 2. 태스크 조회 (전체 가져와서 날짜 필터링) - 더 효율적으로 하려면 API에 날짜 필터 추가 필요
-      const taskRes = await fetch(`${API_BASE}/api/tasks`);
-      if (taskRes.ok) {
-        const tasks: TaskResponse[] = await taskRes.json();
+      const tasks: TaskResponse[] = await authFetchJson<TaskResponse[]>(`${API_BASE}/api/tasks`);
 
-        tasks.forEach(task => {
-          if (task.deadline) {
-            // deadline format: "YYYY-MM-DD"
-            const [tYear, tMonth, tDay] = task.deadline.split("-").map(Number);
+      tasks.forEach(task => {
+        if (task.deadline) {
+          // deadline format: "YYYY-MM-DD"
+          const [tYear, tMonth, tDay] = task.deadline.split("-").map(Number);
 
-            // 현재 달력의 연/월과 일치하는지 확인
-            if (tYear === currentYear && tMonth === (currentMonth + 1)) {
-              uiEvents.push({
-                id: task.taskId, // ID 충돌 가능성? CalendarEvent ID와 겹칠 수 있음. 구분 필요.
-                // UI 렌더링 시 key는 id가 유니크해야함.
-                // 여기서는 id를 그대로 쓰고, isTask로 구분. key={isTask ? `task-${id}` : `cal-${id}`} 처리 필요
-                date: tDay,
-                title: `[Task] ${task.title}`,
-                type: "deadline", // 태스크는 마감일(deadline)로 표시하거나 별도 타입
-                time: "",
-                memo: task.description,
-                isTask: true,
-                projectId: task.projectId,
-                taskId: task.taskId
-              });
-            }
+          // 현재 달력의 연/월과 일치하는지 확인
+          if (tYear === currentYear && tMonth === (currentMonth + 1)) {
+            uiEvents.push({
+              id: task.taskId,
+              date: tDay,
+              title: `[Task] ${task.title}`,
+              type: "deadline",
+              time: "",
+              memo: task.description,
+              isTask: true,
+              projectId: task.projectId,
+              taskId: task.taskId
+            });
           }
-        });
-      }
+        }
+      });
 
       const now = new Date();
       const isSameMonth =
@@ -295,7 +286,7 @@ export default function CalendarPanel() {
         : `${API_BASE}/api/calendar`;
       const method = isEdit ? "PUT" : "POST";
 
-      const res = await fetch(url, {
+      await authFetchJson(url, {
         method: method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -306,11 +297,6 @@ export default function CalendarPanel() {
           memo: formData.memo ?? "",
         }),
       });
-
-      if (!res.ok) {
-        const msg = await res.text();
-        throw new Error(msg);
-      }
 
       closeModal();
       setFormData({ date: "", title: "", type: "-선택-", time: "", memo: "" });

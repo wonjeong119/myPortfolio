@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { authFetchJson, authFetch } from '../api';
 import {
   Plus,
   Trash2,
@@ -44,19 +45,10 @@ interface Project {
 }
 
 // --- API Helper ---
-const API_BASE = 'http://localhost:8080/api';
+const API_BASE = '/api';
 
 async function apiFetch<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
-  const res = await fetch(input, init);
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(text || `HTTP ${res.status}`);
-  }
-  const contentType = res.headers.get('content-type') || '';
-  if (contentType.includes('application/json')) {
-    return res.json() as Promise<T>;
-  }
-  return null as unknown as T;
+  return authFetchJson<T>(input, init);
 }
 
 // Simple fetch projects (Assuming existing logic or similar endpoint available)
@@ -153,7 +145,7 @@ export default function DocumentsView() {
       formData.append('description', newDocument.description || '');
       formData.append('docType', newDocument.docType);
 
-      await fetch(`${API_BASE}/projects/${newDocument.projectId}/documents`, {
+      await authFetch(`${API_BASE}/projects/${newDocument.projectId}/documents`, {
         method: 'POST',
         body: formData,
       });
@@ -210,17 +202,24 @@ export default function DocumentsView() {
     }
   };
 
-  const handleDownload = (doc: DocumentResponse) => {
-    // Direct link to download endpoint
-    const url = `${API_BASE}/documents/${doc.id}/download`;
-    // Check if it works by opening in new tab or creating anchor
-    // creating anchor is better for download attribute
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = doc.originalName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownload = async (doc: DocumentResponse) => {
+    try {
+      const res = await authFetch(`${API_BASE}/documents/${doc.id}/download`);
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', doc.originalName);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (e: any) {
+      console.error("Download error:", e);
+      alert(`다운로드 실패: ${e.message}`);
+    }
   };
 
   // --- Helpers ---

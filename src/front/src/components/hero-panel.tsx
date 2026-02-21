@@ -13,6 +13,8 @@ import { useEffect, useState } from 'react';
 
 import styles from './hero-panel.module.css';
 
+import { authFetchJson } from '../api';
+
 interface ChartData {
   month: string;
   value: number;
@@ -32,8 +34,7 @@ export default function HeroPanel() {
   const [data, setData] = useState<HeroData | null>(null);
 
   useEffect(() => {
-    fetch('/api/main/hero')
-      .then((res) => res.json())
+    authFetchJson<HeroData>('/api/main/hero')
       .then((result) => setData(result))
       .catch((err) => console.error('Failed to fetch hero data:', err));
   }, []);

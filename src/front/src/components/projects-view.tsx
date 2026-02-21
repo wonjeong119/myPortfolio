@@ -1,5 +1,6 @@
 import { useMemo, useEffect, useState } from 'react';
 import { Plus, Trash2, Calendar, Tag, AlertCircle, Edit2 } from 'lucide-react';
+import { authFetchJson } from '../api';
 
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
@@ -35,35 +36,30 @@ interface ProjectUpsertRequest {
   progress: number;
 }
 
-const API_BASE = 'http://localhost:8080/api/projects';
+const API_BASE = '/api/projects';
 
 async function apiGet<T>(url: string): Promise<T> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`GET ${url} failed: ${res.status}`);
-  return res.json();
+  return authFetchJson<T>(url);
 }
 
 async function apiPost(url: string, body: unknown): Promise<void> {
-  const res = await fetch(url, {
+  await authFetchJson(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`POST ${url} failed: ${res.status}`);
 }
 
 async function apiPut(url: string, body: unknown): Promise<void> {
-  const res = await fetch(url, {
+  await authFetchJson(url, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`PUT ${url} failed: ${res.status}`);
 }
 
 async function apiDelete(url: string): Promise<void> {
-  const res = await fetch(url, { method: 'DELETE' });
-  if (!res.ok) throw new Error(`DELETE ${url} failed: ${res.status}`);
+  await authFetchJson(url, { method: 'DELETE' });
 }
 
 export default function ProjectsView() {
