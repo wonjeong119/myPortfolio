@@ -34,4 +34,6 @@ public interface TaskMapper {
     void deleteTask(@Param("projectId") Long projectId, @Param("taskId") Long taskId);
 
     void toggleTaskStatus(@Param("projectId") Long projectId, @Param("taskId") Long taskId);
+
+    void updateProjectProgress(@Param("projectId") Long projectId);
 }

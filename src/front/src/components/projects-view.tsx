@@ -49,7 +49,6 @@ async function apiPost(url: string, body: unknown): Promise<void> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-s
   if (!res.ok) throw new Error(`POST ${url} failed: ${res.status}`);
 }
 
@@ -254,253 +253,251 @@ export default function ProjectsView() {
   }, [projects]);
 
   return (
-      <div className={styles.container}>
-        {/* Header */}
-        <div className={styles.header}>
-          <div>
-            <h1 className={styles.title}>프로젝트</h1>
-            <p className={styles.subtitle}>모든 프로젝트를 관리하고 추적하세요</p>
+    <div className={styles.container}>
+      {/* Header */}
+      <div className={styles.header}>
+        <div>
+          <h1 className={styles.title}>프로젝트</h1>
+          <p className={styles.subtitle}>모든 프로젝트를 관리하고 추적하세요</p>
 
-            {loading && <p className={styles.subtitle}>불러오는 중...</p>}
-            {errorMsg && (
-                <p className={styles.subtitle} style={{ color: 'crimson' }}>
-                  {errorMsg}
-                </p>
-            )}
-          </div>
+          {loading && <p className={styles.subtitle}>불러오는 중...</p>}
+          {errorMsg && (
+            <p className={styles.subtitle} style={{ color: 'crimson' }}>
+              {errorMsg}
+            </p>
+          )}
+        </div>
 
-          <Dialog
-              open={isDialogOpen}
-              onOpenChange={(open) => {
-                setIsDialogOpen(open);
-                if (!open) resetForm();
-              }}
-          >
-            {/* ✅ 기존 UI 유지: 버튼 스타일 동일. 클릭 시 신규 오픈 */}
-            <DialogTrigger asChild>
-              <Button className={styles.addButton} onClick={openCreate}>
-                <Plus className={styles.iconSm} />
-                새 프로젝트
-              </Button>
-            </DialogTrigger>
+        <Dialog
+          open={isDialogOpen}
+          onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) resetForm();
+          }}
+        >
+          {/* ✅ 기존 UI 유지: 버튼 스타일 동일. 클릭 시 신규 오픈 */}
+          <DialogTrigger asChild>
+            <Button className={styles.addButton} onClick={openCreate}>
+              <Plus className={styles.iconSm} />
+              새 프로젝트
+            </Button>
+          </DialogTrigger>
 
-            <DialogContent className={styles.dialogContent}>
-              <DialogHeader>
-                <DialogTitle>{editingId == null ? '새 프로젝트 추가' : '프로젝트 수정'}</DialogTitle>
-              </DialogHeader>
+          <DialogContent className={styles.dialogContent}>
+            <DialogHeader>
+              <DialogTitle>{editingId == null ? '새 프로젝트 추가' : '프로젝트 수정'}</DialogTitle>
+            </DialogHeader>
 
-              <div className={styles.form}>
+            <div className={styles.form}>
+              <div className={styles.formBlock}>
+                <Label htmlFor="project-name">프로젝트명 *</Label>
+                <Input
+                  id="project-name"
+                  placeholder="프로젝트 이름을 입력하세요"
+                  value={form.name ?? ''}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                />
+              </div>
+
+              <div className={styles.formGrid2}>
                 <div className={styles.formBlock}>
-                  <Label htmlFor="project-name">프로젝트명 *</Label>
+                  <Label htmlFor="project-category">카테고리 *</Label>
                   <Input
-                      id="project-name"
-                      placeholder="프로젝트 이름을 입력하세요"
-                      value={form.name ?? ''}
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  />
-                </div>
-
-                <div className={styles.formGrid2}>
-                  <div className={styles.formBlock}>
-                    <Label htmlFor="project-category">카테고리 *</Label>
-                    <Input
-                        id="project-category"
-                        placeholder="예: Web Development"
-                        value={form.category ?? ''}
-                        onChange={(e) => setForm({ ...form, category: e.target.value })}
-                    />
-                  </div>
-
-                  <div className={styles.formBlock}>
-                    <Label htmlFor="project-deadline">마감일 *</Label>
-                    <Input
-                        id="project-deadline"
-                        type="date"
-                        value={form.deadline ?? ''}
-                        onChange={(e) => setForm({ ...form, deadline: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className={styles.formGrid2}>
-                  <div className={styles.formBlock}>
-                    <Label htmlFor="project-priority">우선순위</Label>
-                    <Select
-                        value={(form.priority ?? 'medium') as Priority}
-                        onValueChange={(value) => setForm({ ...form, priority: value as Priority })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="high">높음</SelectItem>
-                        <SelectItem value="medium">중간</SelectItem>
-                        <SelectItem value="low">낮음</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className={styles.formBlock}>
-                    <Label htmlFor="project-status">상태</Label>
-                    <Select
-                        value={(form.status ?? 'active') as Status}
-                        onValueChange={(value) => setForm({ ...form, status: value as Status })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">진행 중</SelectItem>
-                        <SelectItem value="completed">완료</SelectItem>
-                        <SelectItem value="on-hold">보류</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className={styles.formBlock}>
-                  <Label htmlFor="project-description">설명</Label>
-                  <Textarea
-                      id="project-description"
-                      placeholder="프로젝트 설명을 입력하세요"
-                      rows={3}
-                      value={form.description ?? ''}
-                      onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    id="project-category"
+                    placeholder="예: Web Development"
+                    value={form.category ?? ''}
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
                   />
                 </div>
 
                 <div className={styles.formBlock}>
-                  <Label htmlFor="project-progress">진행률 (%)</Label>
+                  <Label htmlFor="project-deadline">마감일 *</Label>
                   <Input
-                      id="project-progress"
-                      type="number"
-                      min="0"
-                      max="100"
-                      placeholder="0"
-                      value={form.progress ?? 0}
-                      onChange={(e) =>
-                          setForm({ ...form, progress: Number.parseInt(e.target.value, 10) || 0 })
-                      }
+                    id="project-deadline"
+                    type="date"
+                    value={form.deadline ?? ''}
+                    onChange={(e) => setForm({ ...form, deadline: e.target.value })}
                   />
                 </div>
               </div>
 
-              <div className={styles.dialogFooter}>
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  취소
-                </Button>
-                <Button onClick={handleSave} className={styles.confirmButton}>
-                  {editingId == null ? '추가' : '저장'}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-
-        {/* Stats */}
-        <div className={styles.statsGrid}>
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>전체 프로젝트</div>
-            <div className={styles.statValue}>{stats.total}</div>
-          </div>
-
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>진행 중</div>
-            <div className={`${styles.statValue} ${styles.statValueBlue}`}>{stats.active}</div>
-          </div>
-
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>완료</div>
-            <div className={`${styles.statValue} ${styles.statValueGreen}`}>{stats.completed}</div>
-          </div>
-
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>높은 우선순위</div>
-            <div className={`${styles.statValue} ${styles.statValueRed}`}>{stats.high}</div>
-          </div>
-        </div>
-
-        {/* Projects Grid */}
-        <div className={styles.projectsGrid}>
-          {projects.map((project) => (
-              <div key={project.id} className={styles.projectCard}>
-                <div className={styles.projectTop}>
-                  <div className={styles.projectTopLeft}>
-                    <h3 className={styles.projectName}>{project.name}</h3>
-
-                    <div className={styles.badgeRow}>
-                      <Badge
-                          variant="outline"
-                          className={`${styles.badgeBase} ${priorityClass(project.priority)}`}
-                      >
-                        <AlertCircle className={styles.iconXs} />
-                        {priorityLabel(project.priority)}
-                      </Badge>
-
-                      <Badge
-                          variant="outline"
-                          className={`${styles.badgeBase} ${statusClass(project.status)}`}
-                      >
-                        {statusLabel(project.status)}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  {/* ✅ 수정 + 삭제 버튼 */}
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className={styles.deleteButton}
-                        onClick={() => openEdit(project)}
-                        aria-label="프로젝트 수정"
-                    >
-                      <Edit2 className={styles.iconSmOnly} />
-                    </Button>
-
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className={styles.deleteButton}
-                        onClick={() => handleDeleteProject(project.id)}
-                        aria-label="프로젝트 삭제"
-                    >
-                      <Trash2 className={styles.iconSmOnly} />
-                    </Button>
-                  </div>
+              <div className={styles.formGrid2}>
+                <div className={styles.formBlock}>
+                  <Label htmlFor="project-priority">우선순위</Label>
+                  <Select
+                    value={(form.priority ?? 'medium') as Priority}
+                    onValueChange={(value) => setForm({ ...form, priority: value as Priority })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="high">높음</SelectItem>
+                      <SelectItem value="medium">중간</SelectItem>
+                      <SelectItem value="low">낮음</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                <p className={styles.description}>{project.description}</p>
-
-                <div className={styles.meta}>
-                  <div className={styles.metaRow}>
-                    <Tag className={styles.iconSmOnly} />
-                    <span>{project.category}</span>
-                  </div>
-                  <div className={styles.metaRow}>
-                    <Calendar className={styles.iconSmOnly} />
-                    <span>마감: {project.deadline}</span>
-                  </div>
-                </div>
-
-                <div className={styles.progressWrap}>
-                  <div className={styles.progressHeader}>
-                    <span className={styles.progressLabel}>진행률</span>
-                    <span className={styles.progressValue}>{project.progress}%</span>
-                  </div>
-                  <div className={styles.progressTrack}>
-                    <div className={styles.progressFill} style={{ width: `${project.progress}%` }} />
-                  </div>
+                <div className={styles.formBlock}>
+                  <Label htmlFor="project-status">상태</Label>
+                  <Select
+                    value={(form.status ?? 'active') as Status}
+                    onValueChange={(value) => setForm({ ...form, status: value as Status })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">진행 중</SelectItem>
+                      <SelectItem value="completed">완료</SelectItem>
+                      <SelectItem value="on-hold">보류</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-          ))}
-        </div>
 
-        {!loading && projects.length === 0 && (
-            <div className={styles.empty}>
-              <p className={styles.emptyText}>프로젝트가 없습니다. 새 프로젝트를 추가해보세요!</p>
+              <div className={styles.formBlock}>
+                <Label htmlFor="project-description">설명</Label>
+                <Textarea
+                  id="project-description"
+                  placeholder="프로젝트 설명을 입력하세요"
+                  rows={3}
+                  value={form.description ?? ''}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                />
+              </div>
+
+              <div className={styles.formBlock}>
+                <Label htmlFor="project-progress">진행률 (%) - 자동 계산</Label>
+                <Input
+                  id="project-progress"
+                  type="number"
+                  min="0"
+                  max="100"
+                  placeholder="0"
+                  value={0}
+                  disabled
+                />
+              </div>
             </div>
-        )}
+
+            <div className={styles.dialogFooter}>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                취소
+              </Button>
+              <Button onClick={handleSave} className={styles.confirmButton}>
+                {editingId == null ? '추가' : '저장'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
+
+      {/* Stats */}
+      <div className={styles.statsGrid}>
+        <div className={styles.statCard}>
+          <div className={styles.statLabel}>전체 프로젝트</div>
+          <div className={styles.statValue}>{stats.total}</div>
+        </div>
+
+        <div className={styles.statCard}>
+          <div className={styles.statLabel}>진행 중</div>
+          <div className={`${styles.statValue} ${styles.statValueBlue}`}>{stats.active}</div>
+        </div>
+
+        <div className={styles.statCard}>
+          <div className={styles.statLabel}>완료</div>
+          <div className={`${styles.statValue} ${styles.statValueGreen}`}>{stats.completed}</div>
+        </div>
+
+        <div className={styles.statCard}>
+          <div className={styles.statLabel}>높은 우선순위</div>
+          <div className={`${styles.statValue} ${styles.statValueRed}`}>{stats.high}</div>
+        </div>
+      </div>
+
+      {/* Projects Grid */}
+      <div className={styles.projectsGrid}>
+        {projects.map((project) => (
+          <div key={project.id} className={styles.projectCard}>
+            <div className={styles.projectTop}>
+              <div className={styles.projectTopLeft}>
+                <h3 className={styles.projectName}>{project.name}</h3>
+
+                <div className={styles.badgeRow}>
+                  <Badge
+                    variant="outline"
+                    className={`${styles.badgeBase} ${priorityClass(project.priority)}`}
+                  >
+                    <AlertCircle className={styles.iconXs} />
+                    {priorityLabel(project.priority)}
+                  </Badge>
+
+                  <Badge
+                    variant="outline"
+                    className={`${styles.badgeBase} ${statusClass(project.status)}`}
+                  >
+                    {statusLabel(project.status)}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* ✅ 수정 + 삭제 버튼 */}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={styles.deleteButton}
+                  onClick={() => openEdit(project)}
+                  aria-label="프로젝트 수정"
+                >
+                  <Edit2 className={styles.iconSmOnly} />
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={styles.deleteButton}
+                  onClick={() => handleDeleteProject(project.id)}
+                  aria-label="프로젝트 삭제"
+                >
+                  <Trash2 className={styles.iconSmOnly} />
+                </Button>
+              </div>
+            </div>
+
+            <p className={styles.description}>{project.description}</p>
+
+            <div className={styles.meta}>
+              <div className={styles.metaRow}>
+                <Tag className={styles.iconSmOnly} />
+                <span>{project.category}</span>
+              </div>
+              <div className={styles.metaRow}>
+                <Calendar className={styles.iconSmOnly} />
+                <span>마감: {project.deadline}</span>
+              </div>
+            </div>
+
+            <div className={styles.progressWrap}>
+              <div className={styles.progressHeader}>
+                <span className={styles.progressLabel}>진행률</span>
+                <span className={styles.progressValue}>{project.progress}%</span>
+              </div>
+              <div className={styles.progressTrack}>
+                <div className={styles.progressFill} style={{ width: `${project.progress}%` }} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {!loading && projects.length === 0 && (
+        <div className={styles.empty}>
+          <p className={styles.emptyText}>프로젝트가 없습니다. 새 프로젝트를 추가해보세요!</p>
+        </div>
+      )}
+    </div>
   );
 }

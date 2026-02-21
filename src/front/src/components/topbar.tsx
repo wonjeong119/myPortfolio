@@ -144,18 +144,18 @@ export default function Topbar() {
               aria-label="사용자 메뉴"
             >
               <div className="topbarAvatar">
-                <span className="topbarAvatarText">JD</span>
+                <span className="topbarAvatarText">관</span>
               </div>
             </button>
 
             {dropdownOpen && (
               <div className="topbarMenu">
                 <div className="topbarMenuHeader">
-                  <p className="topbarMenuName">John Doe</p>
-                  <p className="topbarMenuEmail">john@example.com</p>
+                  <p className="topbarMenuName">admin</p>
+                  <p className="topbarMenuEmail">관리자</p>
                 </div>
 
-                <button className="topbarMenuItem" type="button">
+                {/*<button className="topbarMenuItem" type="button">
                   <User className="topbarMenuIcon" />
                   프로필
                 </button>
@@ -164,7 +164,7 @@ export default function Topbar() {
                   <Settings className="topbarMenuIcon" />
                   설정
                 </button>
-
+                */}
                 <div className="topbarMenuFooter">
                   <button className="topbarMenuItemDanger" type="button">
                     <LogOut className="topbarMenuIcon" />

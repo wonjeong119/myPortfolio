@@ -54,8 +54,8 @@ async function fetchTasks(projectId: number): Promise<Task[]> {
 }
 
 async function createTask(
-    projectId: number,
-    body: { title: string; description?: string; priority: Priority; deadline: string }
+  projectId: number,
+  body: { title: string; description?: string; priority: Priority; deadline: string }
 ): Promise<Task> {
   return apiFetch<Task>(`${API_BASE}/${projectId}/tasks`, {
     method: 'POST',
@@ -65,9 +65,9 @@ async function createTask(
 }
 
 async function updateTask(
-    projectId: number,
-    taskId: number,
-    body: { title: string; description?: string; priority: Priority; deadline: string; completed: boolean }
+  projectId: number,
+  taskId: number,
+  body: { title: string; description?: string; priority: Priority; deadline: string; completed: boolean }
 ): Promise<Task> {
   return apiFetch<Task>(`${API_BASE}/${projectId}/tasks/${taskId}`, {
     method: 'PUT',
@@ -127,19 +127,19 @@ export default function TasksView() {
     setProjectsError('');
 
     fetchProjectsSimple()
-        .then((list) => {
-          if (cancelled) return;
-          setProjects(list);
-        })
-        .catch((e: any) => {
-          if (cancelled) return;
-          setProjectsError(`프로젝트 목록 조회 실패: ${e?.message || '오류'}`);
-          setProjects([]);
-        })
-        .finally(() => {
-          if (cancelled) return;
-          setProjectsLoading(false);
-        });
+      .then((list) => {
+        if (cancelled) return;
+        setProjects(list);
+      })
+      .catch((e: any) => {
+        if (cancelled) return;
+        setProjectsError(`프로젝트 목록 조회 실패: ${e?.message || '오류'}`);
+        setProjects([]);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setProjectsLoading(false);
+      });
 
     return () => {
       cancelled = true;
@@ -159,12 +159,12 @@ export default function TasksView() {
     if (selectedProjectId === 'all') {
       setLoading(true);
       fetchAllTasks()
-          .then((data) => setTasks(Array.isArray(data) ? data : []))
-          .catch((e: any) => {
-            setErrorMsg(`작업 조회 실패: ${e?.message || '알 수 없는 오류'}`);
-            setTasks([]);
-          })
-          .finally(() => setLoading(false));
+        .then((data) => setTasks(Array.isArray(data) ? data : []))
+        .catch((e: any) => {
+          setErrorMsg(`작업 조회 실패: ${e?.message || '알 수 없는 오류'}`);
+          setTasks([]);
+        })
+        .finally(() => setLoading(false));
       return;
     }
 
@@ -178,19 +178,19 @@ export default function TasksView() {
 
     setLoading(true);
     fetchTasks(projectId)
-        .then((data) => {
-          if (cancelled) return;
-          setTasks(Array.isArray(data) ? data : []);
-        })
-        .catch((e: any) => {
-          if (cancelled) return;
-          setErrorMsg(`작업 조회 실패: ${e?.message || '알 수 없는 오류'}`);
-          setTasks([]);
-        })
-        .finally(() => {
-          if (cancelled) return;
-          setLoading(false);
-        });
+      .then((data) => {
+        if (cancelled) return;
+        setTasks(Array.isArray(data) ? data : []);
+      })
+      .catch((e: any) => {
+        if (cancelled) return;
+        setErrorMsg(`작업 조회 실패: ${e?.message || '알 수 없는 오류'}`);
+        setTasks([]);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setLoading(false);
+      });
 
     return () => {
       cancelled = true;
@@ -198,9 +198,9 @@ export default function TasksView() {
   }, [selectedProjectId, selectedProjectIdNumber]);
 
   const filteredTasks =
-      selectedProjectId === 'all'
-          ? tasks
-          : tasks.filter((task) => String(task.projectId) === selectedProjectId);
+    selectedProjectId === 'all'
+      ? tasks
+      : tasks.filter((task) => String(task.projectId) === selectedProjectId);
 
   const handleAddTask = async () => {
     setErrorMsg('');
@@ -254,9 +254,9 @@ export default function TasksView() {
       });
 
       setTasks((prev) =>
-          prev.map((t) =>
-              t.projectId === updated.projectId && t.taskId === updated.taskId ? updated : t
-          )
+        prev.map((t) =>
+          t.projectId === updated.projectId && t.taskId === updated.taskId ? updated : t
+        )
       );
 
       setIsEditDialogOpen(false);
@@ -276,7 +276,7 @@ export default function TasksView() {
       await deleteTask(task.projectId, task.taskId);
 
       setTasks((prev) =>
-          prev.filter((t) => !(t.projectId === task.projectId && t.taskId === task.taskId))
+        prev.filter((t) => !(t.projectId === task.projectId && t.taskId === task.taskId))
       );
     } catch (e: any) {
       setErrorMsg(`작업 삭제 실패: ${e?.message || '알 수 없는 오류'}`);
@@ -290,9 +290,9 @@ export default function TasksView() {
     try {
       const updated = await toggleTask(task.projectId, task.taskId);
       setTasks((prev) =>
-          prev.map((t) =>
-              t.projectId === updated.projectId && t.taskId === updated.taskId ? updated : t
-          )
+        prev.map((t) =>
+          t.projectId === updated.projectId && t.taskId === updated.taskId ? updated : t
+        )
       );
     } catch (e: any) {
       setErrorMsg(`완료 처리 실패: ${e?.message || '알 수 없는 오류'}`);
@@ -339,169 +339,169 @@ export default function TasksView() {
   const progressPercentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return (
-      <div className={styles.container}>
-        {/* Header */}
-        <div className={styles.header}>
-          <div>
-            <h1 className={styles.title}>작업</h1>
-            <p className={styles.subtitle}>프로젝트별 작업을 관리하고 추적하세요</p>
+    <div className={styles.container}>
+      {/* Header */}
+      <div className={styles.header}>
+        <div>
+          <h1 className={styles.title}>작업</h1>
+          <p className={styles.subtitle}>프로젝트별 작업을 관리하고 추적하세요</p>
 
-            {projectsError && (
-                <p style={{ marginTop: 8, color: '#b91c1c', fontSize: 14 }}>{projectsError}</p>
-            )}
-            {errorMsg && <p style={{ marginTop: 8, color: '#b91c1c', fontSize: 14 }}>{errorMsg}</p>}
+          {projectsError && (
+            <p style={{ marginTop: 8, color: '#b91c1c', fontSize: 14 }}>{projectsError}</p>
+          )}
+          {errorMsg && <p style={{ marginTop: 8, color: '#b91c1c', fontSize: 14 }}>{errorMsg}</p>}
 
-            {(projectsLoading || loading) && (
-                <p style={{ marginTop: 6, color: '#6b7280', fontSize: 12 }}>로딩 중...</p>
-            )}
-          </div>
+          {(projectsLoading || loading) && (
+            <p style={{ marginTop: 6, color: '#6b7280', fontSize: 12 }}>로딩 중...</p>
+          )}
+        </div>
 
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className={styles.primaryButton}>
-                <Plus className={styles.icon16} />
-                새 작업
-              </Button>
-            </DialogTrigger>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className={styles.primaryButton}>
+              <Plus className={styles.icon16} />
+              새 작업
+            </Button>
+          </DialogTrigger>
 
-            <DialogContent className={styles.dialogContent}>
-              <DialogHeader>
-                <DialogTitle>새 작업 추가</DialogTitle>
-              </DialogHeader>
+          <DialogContent className={styles.dialogContent}>
+            <DialogHeader>
+              <DialogTitle>새 작업 추가</DialogTitle>
+            </DialogHeader>
 
-              <div className={styles.formBody}>
+            <div className={styles.formBody}>
+              <div className={styles.field}>
+                <Label htmlFor="add-task-title">작업명 *</Label>
+                <Input
+                  id="add-task-title"
+                  placeholder="작업 제목을 입력하세요"
+                  value={newTask.title}
+                  onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                />
+              </div>
+
+              <div className={styles.grid2}>
                 <div className={styles.field}>
-                  <Label htmlFor="add-task-title">작업명 *</Label>
-                  <Input
-                      id="add-task-title"
-                      placeholder="작업 제목을 입력하세요"
-                      value={newTask.title}
-                      onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                  />
-                </div>
-
-                <div className={styles.grid2}>
-                  <div className={styles.field}>
-                    <Label htmlFor="add-task-project">프로젝트 *</Label>
-                    <Select
-                        value={newTask.projectId}
-                        onValueChange={(value) => setNewTask({ ...newTask, projectId: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={projectsLoading ? '불러오는 중...' : '프로젝트 선택'} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {projects.map((project) => (
-                            <SelectItem key={project.id} value={project.id}>
-                              {project.name}
-                            </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className={styles.field}>
-                    <Label htmlFor="add-task-deadline">마감일 *</Label>
-                    <Input
-                        id="add-task-deadline"
-                        type="date"
-                        value={newTask.deadline}
-                        onChange={(e) => setNewTask({ ...newTask, deadline: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className={styles.field}>
-                  <Label htmlFor="add-task-priority">우선순위</Label>
+                  <Label htmlFor="add-task-project">프로젝트 *</Label>
                   <Select
-                      value={newTask.priority}
-                      onValueChange={(value) => setNewTask({ ...newTask, priority: value as Priority })}
+                    value={newTask.projectId}
+                    onValueChange={(value) => setNewTask({ ...newTask, projectId: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder={projectsLoading ? '불러오는 중...' : '프로젝트 선택'} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="high">높음</SelectItem>
-                      <SelectItem value="medium">중간</SelectItem>
-                      <SelectItem value="low">낮음</SelectItem>
+                      {projects.map((project) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className={styles.field}>
-                  <Label htmlFor="add-task-description">설명</Label>
-                  <Textarea
-                      id="add-task-description"
-                      placeholder="작업 설명을 입력하세요"
-                      rows={3}
-                      value={newTask.description}
-                      onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                  <Label htmlFor="add-task-deadline">마감일 *</Label>
+                  <Input
+                    id="add-task-deadline"
+                    type="date"
+                    value={newTask.deadline}
+                    onChange={(e) => setNewTask({ ...newTask, deadline: e.target.value })}
                   />
                 </div>
               </div>
 
-              <div className={styles.dialogActions}>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  취소
-                </Button>
-                <Button onClick={handleAddTask} className={styles.primaryButton}>
-                  추가
-                </Button>
+              <div className={styles.field}>
+                <Label htmlFor="add-task-priority">우선순위</Label>
+                <Select
+                  value={newTask.priority}
+                  onValueChange={(value) => setNewTask({ ...newTask, priority: value as Priority })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="high">높음</SelectItem>
+                    <SelectItem value="medium">중간</SelectItem>
+                    <SelectItem value="low">낮음</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </DialogContent>
-          </Dialog>
-        </div>
 
-        {/* Stats & Filter */}
-        <div className={styles.statsGrid}>
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>전체 작업</div>
-            <div className={styles.statValue}>{filteredTasks.length}</div>
-          </div>
-
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>완료</div>
-            <div className={`${styles.statValue} ${styles.statGreen}`}>{completedCount}</div>
-          </div>
-
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>진행 중</div>
-            <div className={`${styles.statValue} ${styles.statBlue}`}>
-              {filteredTasks.length - completedCount}
+              <div className={styles.field}>
+                <Label htmlFor="add-task-description">설명</Label>
+                <Textarea
+                  id="add-task-description"
+                  placeholder="작업 설명을 입력하세요"
+                  rows={3}
+                  value={newTask.description}
+                  onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                />
+              </div>
             </div>
-          </div>
 
-          <div className={styles.statCard}>
-            <div className={styles.statLabel}>진행률</div>
-            <div className={`${styles.statValue} ${styles.statPurple}`}>{progressPercentage}%</div>
-          </div>
+            <div className={styles.dialogActions}>
+              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                취소
+              </Button>
+              <Button onClick={handleAddTask} className={styles.primaryButton}>
+                추가
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
 
-          <div className={styles.statCard}>
-            <Label htmlFor="project-filter" className={styles.filterLabel}>
-              <Filter className={styles.icon16} />
-              프로젝트 필터
-            </Label>
-            <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-              <SelectTrigger id="project-filter" className={styles.filterTrigger}>
-                <SelectValue placeholder={projectsLoading ? '불러오는 중...' : undefined} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">전체</SelectItem>
-                {projects.map((project) => (
-                    <SelectItem key={project.id} value={project.id}>
-                      {project.name}
-                    </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      {/* Stats & Filter */}
+      <div className={styles.statsGrid}>
+        <div className={styles.statCard}>
+          <div className={styles.statLabel}>전체 작업</div>
+          <div className={styles.statValue}>{filteredTasks.length}</div>
+        </div>
+
+        <div className={styles.statCard}>
+          <div className={styles.statLabel}>완료</div>
+          <div className={`${styles.statValue} ${styles.statGreen}`}>{completedCount}</div>
+        </div>
+
+        <div className={styles.statCard}>
+          <div className={styles.statLabel}>진행 중</div>
+          <div className={`${styles.statValue} ${styles.statBlue}`}>
+            {filteredTasks.length - completedCount}
           </div>
         </div>
 
-        {/* Tasks List */}
-        <div className={styles.tableCard}>
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <thead className={styles.thead}>
+        <div className={styles.statCard}>
+          <div className={styles.statLabel}>진행률</div>
+          <div className={`${styles.statValue} ${styles.statPurple}`}>{progressPercentage}%</div>
+        </div>
+
+        <div className={styles.statCard}>
+          <Label htmlFor="project-filter" className={styles.filterLabel}>
+            <Filter className={styles.icon16} />
+            프로젝트 필터
+          </Label>
+          <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+            <SelectTrigger id="project-filter" className={styles.filterTrigger}>
+              <SelectValue placeholder={projectsLoading ? '불러오는 중...' : undefined} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체</SelectItem>
+              {projects.map((project) => (
+                <SelectItem key={project.id} value={project.id}>
+                  {project.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Tasks List */}
+      <div className={styles.tableCard}>
+        <div className={styles.tableWrap}>
+          <table className={styles.table}>
+            <thead className={styles.thead}>
               <tr>
                 <th className={styles.thCheckbox}>
                   <span className={styles.srOnly}>완료</span>
@@ -512,186 +512,186 @@ export default function TasksView() {
                 <th className={styles.th}>마감일</th>
                 <th className={styles.thActions}>작업</th>
               </tr>
-              </thead>
+            </thead>
 
-              <tbody className={styles.tbody}>
+            <tbody className={styles.tbody}>
               {filteredTasks.map((task) => (
-                  <tr key={`${task.projectId}-${task.taskId}`} className={styles.row}>
-                    <td className={styles.td}>
-                      <Checkbox
-                          checked={task.completed}
-                          onCheckedChange={() => handleToggleComplete(task)}
-                          className={styles.checkbox}
-                      />
-                    </td>
+                <tr key={`${task.projectId}-${task.taskId}`} className={styles.row}>
+                  <td className={styles.td}>
+                    <Checkbox
+                      checked={task.completed}
+                      onCheckedChange={() => handleToggleComplete(task)}
+                      className={styles.checkbox}
+                    />
+                  </td>
 
-                    <td className={styles.td}>
-                      <div>
-                        <div className={task.completed ? styles.taskTitleDone : styles.taskTitle}>
-                          {task.title}
-                        </div>
-                        {task.description && <div className={styles.taskDesc}>{task.description}</div>}
+                  <td className={styles.td}>
+                    <div>
+                      <div className={task.completed ? styles.taskTitleDone : styles.taskTitle}>
+                        {task.title}
                       </div>
-                    </td>
+                      {task.description && <div className={styles.taskDesc}>{task.description}</div>}
+                    </div>
+                  </td>
 
-                    <td className={styles.td}>
-                      <div className={styles.projectCell}>
-                        <Tag className={styles.icon16} />
-                        {getProjectName(task.projectId)}
-                      </div>
-                    </td>
+                  <td className={styles.td}>
+                    <div className={styles.projectCell}>
+                      <Tag className={styles.icon16} />
+                      {getProjectName(task.projectId)}
+                    </div>
+                  </td>
 
-                    <td className={styles.td}>
-                      <Badge variant="outline" className={getPriorityColor(task.priority)}>
-                        {getPriorityLabel(task.priority)}
-                      </Badge>
-                    </td>
+                  <td className={styles.td}>
+                    <Badge variant="outline" className={getPriorityColor(task.priority)}>
+                      {getPriorityLabel(task.priority)}
+                    </Badge>
+                  </td>
 
-                    <td className={styles.td}>
-                      <div className={styles.deadlineCell}>
-                        <Calendar className={styles.icon16} />
-                        {task.deadline}
-                      </div>
-                    </td>
+                  <td className={styles.td}>
+                    <div className={styles.deadlineCell}>
+                      <Calendar className={styles.icon16} />
+                      {task.deadline}
+                    </div>
+                  </td>
 
-                    <td className={styles.td}>
-                      <div className={styles.actions}>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className={styles.actionBtn}
-                            onClick={() => openEditDialog(task)}
-                        >
-                          <Edit2 className={styles.icon16} />
-                        </Button>
+                  <td className={styles.td}>
+                    <div className={styles.actions}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={styles.actionBtn}
+                        onClick={() => openEditDialog(task)}
+                      >
+                        <Edit2 className={styles.icon16} />
+                      </Button>
 
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className={`${styles.actionBtn} ${styles.deleteBtn}`}
-                            onClick={() => handleDeleteTask(task)}
-                        >
-                          <Trash2 className={styles.icon16} />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`${styles.actionBtn} ${styles.deleteBtn}`}
+                        onClick={() => handleDeleteTask(task)}
+                      >
+                        <Trash2 className={styles.icon16} />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
               ))}
-              </tbody>
-            </table>
-          </div>
-
-          {filteredTasks.length === 0 && (
-              <div className={styles.empty}>
-                <p className={styles.emptyText}>
-                  {selectedProjectId === 'all'
-                      ? '프로젝트를 선택하면 작업이 표시됩니다.'
-                      : '작업이 없습니다. 새 작업을 추가해보세요!'}
-                </p>
-              </div>
-          )}
+            </tbody>
+          </table>
         </div>
 
-        {/* Edit Dialog */}
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className={styles.dialogContent}>
-            <DialogHeader>
-              <DialogTitle>작업 수정</DialogTitle>
-            </DialogHeader>
-
-            {editingTask && (
-                <div className={styles.formBody}>
-                  <div className={styles.field}>
-                    <Label htmlFor="edit-task-title">작업명 *</Label>
-                    <Input
-                        id="edit-task-title"
-                        placeholder="작업 제목을 입력하세요"
-                        value={editingTask.title}
-                        onChange={(e) => setEditingTask({ ...editingTask, title: e.target.value })}
-                    />
-                  </div>
-
-                  <div className={styles.grid2}>
-                    <div className={styles.field}>
-                      <Label htmlFor="edit-task-project">프로젝트 *</Label>
-                      <Select value={String(editingTask.projectId)} disabled>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {projects.map((project) => (
-                              <SelectItem key={project.id} value={project.id}>
-                                {project.name}
-                              </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className={styles.field}>
-                      <Label htmlFor="edit-task-deadline">마감일 *</Label>
-                      <Input
-                          id="edit-task-deadline"
-                          type="date"
-                          value={editingTask.deadline}
-                          onChange={(e) => setEditingTask({ ...editingTask, deadline: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className={styles.field}>
-                    <Label htmlFor="edit-task-priority">우선순위</Label>
-                    <Select
-                        value={editingTask.priority}
-                        onValueChange={(value) => setEditingTask({ ...editingTask, priority: value as Priority })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="high">높음</SelectItem>
-                        <SelectItem value="medium">중간</SelectItem>
-                        <SelectItem value="low">낮음</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className={styles.field}>
-                    <Label htmlFor="edit-task-description">설명</Label>
-                    <Textarea
-                        id="edit-task-description"
-                        placeholder="작업 설명을 입력하세요"
-                        rows={3}
-                        value={editingTask.description}
-                        onChange={(e) => setEditingTask({ ...editingTask, description: e.target.value })}
-                    />
-                  </div>
-
-                  <div className={styles.completedRow}>
-                    <Checkbox
-                        id="edit-task-completed"
-                        checked={editingTask.completed}
-                        onCheckedChange={(checked) =>
-                            setEditingTask({ ...editingTask, completed: checked as boolean })
-                        }
-                    />
-                    <Label htmlFor="edit-task-completed" className={styles.completedLabel}>
-                      작업 완료
-                    </Label>
-                  </div>
-                </div>
-            )}
-
-            <div className={styles.dialogActions}>
-              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                취소
-              </Button>
-              <Button onClick={handleEditTask} className={styles.primaryButton}>
-                저장
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {filteredTasks.length === 0 && (
+          <div className={styles.empty}>
+            <p className={styles.emptyText}>
+              {selectedProjectId === 'all'
+                ? '프로젝트를 선택하면 작업이 표시됩니다.'
+                : '작업이 없습니다. 새 작업을 추가해보세요!'}
+            </p>
+          </div>
+        )}
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className={styles.dialogContent}>
+          <DialogHeader>
+            <DialogTitle>작업 수정</DialogTitle>
+          </DialogHeader>
+
+          {editingTask && (
+            <div className={styles.formBody}>
+              <div className={styles.field}>
+                <Label htmlFor="edit-task-title">작업명 *</Label>
+                <Input
+                  id="edit-task-title"
+                  placeholder="작업 제목을 입력하세요"
+                  value={editingTask.title}
+                  onChange={(e) => setEditingTask({ ...editingTask, title: e.target.value })}
+                />
+              </div>
+
+              <div className={styles.grid2}>
+                <div className={styles.field}>
+                  <Label htmlFor="edit-task-project">프로젝트 *</Label>
+                  <Select value={String(editingTask.projectId)} disabled>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projects.map((project) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className={styles.field}>
+                  <Label htmlFor="edit-task-deadline">마감일 *</Label>
+                  <Input
+                    id="edit-task-deadline"
+                    type="date"
+                    value={editingTask.deadline}
+                    onChange={(e) => setEditingTask({ ...editingTask, deadline: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className={styles.field}>
+                <Label htmlFor="edit-task-priority">우선순위</Label>
+                <Select
+                  value={editingTask.priority}
+                  onValueChange={(value) => setEditingTask({ ...editingTask, priority: value as Priority })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="high">높음</SelectItem>
+                    <SelectItem value="medium">중간</SelectItem>
+                    <SelectItem value="low">낮음</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className={styles.field}>
+                <Label htmlFor="edit-task-description">설명</Label>
+                <Textarea
+                  id="edit-task-description"
+                  placeholder="작업 설명을 입력하세요"
+                  rows={3}
+                  value={editingTask.description}
+                  onChange={(e) => setEditingTask({ ...editingTask, description: e.target.value })}
+                />
+              </div>
+
+              <div className={styles.completedRow}>
+                <Checkbox
+                  id="edit-task-completed"
+                  checked={editingTask.completed}
+                  onCheckedChange={(checked) =>
+                    setEditingTask({ ...editingTask, completed: checked as boolean })
+                  }
+                />
+                <Label htmlFor="edit-task-completed" className={styles.completedLabel}>
+                  작업 완료
+                </Label>
+              </div>
+            </div>
+          )}
+
+          <div className={styles.dialogActions}>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              취소
+            </Button>
+            <Button onClick={handleEditTask} className={styles.primaryButton}>
+              저장
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

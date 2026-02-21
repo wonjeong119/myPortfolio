@@ -56,20 +56,24 @@ public class TaskService {
         task.setCompleted(request.completed() != null ? request.completed() : false);
 
         taskMapper.insertTask(task);
+        taskMapper.updateProjectProgress(projectId);
         return taskMapper.findByPk(projectId, currentTaskId).orElse(task);
     }
 
     public TaskResponse updateTask(Long projectId, Long taskId, TaskRequest request) {
         taskMapper.updateTask(projectId, taskId, request);
+        taskMapper.updateProjectProgress(projectId);
         return getTask(projectId, taskId);
     }
 
     public void deleteTask(Long projectId, Long taskId) {
         taskMapper.deleteTask(projectId, taskId);
+        taskMapper.updateProjectProgress(projectId);
     }
 
     public TaskResponse toggleTask(Long projectId, Long taskId) {
         taskMapper.toggleTaskStatus(projectId, taskId);
+        taskMapper.updateProjectProgress(projectId);
         return getTask(projectId, taskId);
     }
 }

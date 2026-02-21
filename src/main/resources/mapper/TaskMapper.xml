@@ -89,4 +89,18 @@
         WHERE project_id = #{projectId} AND task_id = #{taskId}
     </update>
 
+    <!-- 프로젝트 진행률 업데이트: 완료 작업 수 / 전체 작업 수 * 100 -->
+    <update id="updateProjectProgress">
+        UPDATE projects
+        SET progress = COALESCE(
+            (SELECT CASE WHEN COUNT(*) = 0 THEN 0
+                         ELSE ROUND(COUNT(CASE WHEN completed = true THEN 1 END) * 100.0 / COUNT(*))
+                    END
+             FROM tasks
+             WHERE project_id = #{projectId}),
+            0),
+            updated_at = now()
+        WHERE id = #{projectId}
+    </update>
+
 </mapper>
