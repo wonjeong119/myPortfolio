@@ -3,7 +3,7 @@ import "./topbar.css";
 
 import { Bell, User, LogOut, Settings, Clock, CheckCircle, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import { authFetchJson, logout } from "../api";
+import { authFetchJson, logout, API_BASE } from "../api";
 
 type Task = {
   taskId: number;
@@ -39,7 +39,7 @@ export default function Topbar() {
     // Fetch tasks to check for completed ones
     const fetchTasks = async () => {
       try {
-        const data: Task[] = await authFetchJson<Task[]>("http://localhost:8080/api/tasks/recent-completed");
+        const data: Task[] = await authFetchJson<Task[]>(`${API_BASE}/api/tasks/recent-completed`);
         setCompletedTasks(data);
       } catch (e) {
         console.error("Failed to fetch tasks for notifications", e);

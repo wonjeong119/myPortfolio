@@ -55,7 +55,7 @@ type TaskResponse = {
   updatedAt: string;
 };
 
-const API_BASE = "http://localhost:8080";
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8080";
 
 // 모달 select(한글) -> 서버/프론트 EventType(영문)
 function mapKoreanTypeToEventType(v: string): EventType {
