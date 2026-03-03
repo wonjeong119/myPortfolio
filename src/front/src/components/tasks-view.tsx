@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2, Edit2, Calendar, Tag, Filter } from 'lucide-react';
-import { authFetchJson } from '../api';
+import { authFetchJson, API_BASE } from '../api';
 
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
@@ -32,26 +32,26 @@ interface Project {
   name: string;
 }
 
-const API_BASE = '/api/projects';
+const PROJECTS_API = `${API_BASE}/api/projects`;
 
 async function apiFetch<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
   return authFetchJson<T>(input, init);
 }
 
 async function fetchProjectsSimple(): Promise<Project[]> {
-  const data = await apiFetch<Array<{ id: number; name: string }>>(`${API_BASE}`);
+  const data = await apiFetch<Array<{ id: number; name: string }>>(`${PROJECTS_API}`);
   return (data || []).map((p) => ({ id: String(p.id), name: p.name }));
 }
 
 async function fetchTasks(projectId: number): Promise<Task[]> {
-  return apiFetch<Task[]>(`${API_BASE}/${projectId}/tasks`);
+  return apiFetch<Task[]>(`${PROJECTS_API}/${projectId}/tasks`);
 }
 
 async function createTask(
   projectId: number,
   body: { title: string; description?: string; priority: Priority; deadline: string }
 ): Promise<Task> {
-  return apiFetch<Task>(`${API_BASE}/${projectId}/tasks`, {
+  return apiFetch<Task>(`${PROJECTS_API}/${projectId}/tasks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -63,7 +63,7 @@ async function updateTask(
   taskId: number,
   body: { title: string; description?: string; priority: Priority; deadline: string; completed: boolean }
 ): Promise<Task> {
-  return apiFetch<Task>(`${API_BASE}/${projectId}/tasks/${taskId}`, {
+  return apiFetch<Task>(`${PROJECTS_API}/${projectId}/tasks/${taskId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -71,15 +71,15 @@ async function updateTask(
 }
 
 async function toggleTask(projectId: number, taskId: number): Promise<Task> {
-  return apiFetch<Task>(`${API_BASE}/${projectId}/tasks/${taskId}/toggle`, { method: 'PATCH' });
+  return apiFetch<Task>(`${PROJECTS_API}/${projectId}/tasks/${taskId}/toggle`, { method: 'PATCH' });
 }
 
 async function deleteTask(projectId: number, taskId: number): Promise<void> {
-  await apiFetch<void>(`${API_BASE}/${projectId}/tasks/${taskId}`, { method: 'DELETE' });
+  await apiFetch<void>(`${PROJECTS_API}/${projectId}/tasks/${taskId}`, { method: 'DELETE' });
 }
 
 async function fetchAllTasks(): Promise<Task[]> {
-  return apiFetch<Task[]>(`/api/tasks`);
+  return apiFetch<Task[]>(`${API_BASE}/api/tasks`);
 }
 
 export default function TasksView() {

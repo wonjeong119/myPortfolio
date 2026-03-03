@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { authFetchJson, authFetch } from '../api';
+import { authFetchJson, authFetch, API_BASE as BASE_URL } from '../api';
 import {
   Plus,
   Trash2,
@@ -45,7 +45,7 @@ interface Project {
 }
 
 // --- API Helper ---
-const API_BASE = '/api';
+const API_BASE = `${BASE_URL}/api`;
 
 async function apiFetch<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
   return authFetchJson<T>(input, init);

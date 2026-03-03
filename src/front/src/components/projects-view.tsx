@@ -1,6 +1,6 @@
 import { useMemo, useEffect, useState } from 'react';
 import { Plus, Trash2, Calendar, Tag, AlertCircle, Edit2 } from 'lucide-react';
-import { authFetchJson } from '../api';
+import { authFetchJson, API_BASE as BASE_URL } from '../api';
 
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
@@ -36,7 +36,7 @@ interface ProjectUpsertRequest {
   progress: number;
 }
 
-const API_BASE = '/api/projects';
+const API_BASE = `${BASE_URL}/api/projects`;
 
 async function apiGet<T>(url: string): Promise<T> {
   return authFetchJson<T>(url);

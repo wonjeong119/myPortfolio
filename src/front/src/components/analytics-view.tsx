@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { authFetchJson } from '../api';
+import { authFetchJson, API_BASE as BASE_URL } from '../api';
 import {
   BarChart,
   Bar,
@@ -58,7 +58,7 @@ interface TaskResponse {
 type TimeRange = 'daily' | 'weekly' | 'monthly';
 
 // --- API Helper ---
-const API_BASE = '/api/analytics';
+const API_BASE = `${BASE_URL}/api/analytics`;
 
 async function apiFetch<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
   return authFetchJson<T>(input, init);
