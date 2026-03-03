@@ -2,7 +2,7 @@
 import { MoreVertical, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import styles from './items-table.module.css';
-import { authFetchJson } from '../api';
+import { authFetchJson, API_BASE } from '../api';
 
 // API DTO Interface
 interface Item {
@@ -76,7 +76,7 @@ export default function ItemsTable() {
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
 
   useEffect(() => {
-    authFetchJson<Item[]>('/api/main/items')
+    authFetchJson<Item[]>(`${API_BASE}/api/main/items`)
       .then((data) => setItems(data))
       .catch((err) => console.error('Failed to fetch items:', err));
   }, []);

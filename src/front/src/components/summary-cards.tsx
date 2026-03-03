@@ -1,7 +1,7 @@
 import { FolderOpen, CheckSquare, Clock, ListTodo } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import styles from './summary-cards.module.css';
-import { authFetchJson } from '../api';
+import { authFetchJson, API_BASE } from '../api';
 
 interface SummaryData {
   ongoingProjectsValue: string;
@@ -24,7 +24,7 @@ export default function SummaryCards() {
   const [data, setData] = useState<SummaryData | null>(null);
 
   useEffect(() => {
-    authFetchJson<SummaryData>('/api/main/summary')
+    authFetchJson<SummaryData>(`${API_BASE}/api/main/summary`)
       .then((result) => setData(result))
       .catch((err) => console.error('Failed to fetch summary:', err));
   }, []);
