@@ -1,15 +1,18 @@
+cors:
+  allowed-origins: ${CORS_ORIGINS:http://localhost:5173,http://localhost:3000}
+
 jwt:
-  secret: MyPortfolioSecretKeyForJWT2026ThisMustBe256BitsLong!!
-  expiration-ms: 1800000  # 30분 (30 * 60 * 1000)
+  secret: ${JWT_SECRET:MyPortfolioSecretKeyForJWT2026ThisMustBe256BitsLong!!}
+  expiration-ms: ${JWT_EXPIRATION:1800000}
 
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 spring:
   datasource:
-    url: jdbc:postgresql://192.168.50.208:5433/postgres
-    username: postgres
-    password: admin
+    url: ${DATABASE_URL:jdbc:postgresql://192.168.50.208:5433/postgres}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:admin}
   servlet:
     multipart:
       max-file-size: 50MB
