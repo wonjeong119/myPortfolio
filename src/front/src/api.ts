@@ -2,6 +2,10 @@ export const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080'
 
 /** localStorage에 저장된 JWT 토큰 키 */
 const TOKEN_KEY = 'jwt_token';
+const LOGIN_TIME_KEY = 'login_time';
+
+/** 세션 타임아웃: 30분 (밀리초) */
+export const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
 
 /** 토큰 가져오기 */
 export function getToken(): string | null {
@@ -16,6 +20,7 @@ export function setToken(token: string): void {
 /** 토큰 삭제 */
 export function removeToken(): void {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(LOGIN_TIME_KEY);
 }
 
 /** 로그인 여부 확인 */
@@ -82,6 +87,7 @@ export async function loginApi(username: string, password: string): Promise<stri
 
     const data = await res.json();
     setToken(data.token);
+    localStorage.setItem(LOGIN_TIME_KEY, Date.now().toString());
     return data.token;
 }
 
@@ -89,4 +95,10 @@ export async function loginApi(username: string, password: string): Promise<stri
 export function logout(): void {
     removeToken();
     window.location.reload();
+}
+
+/** 로그인 시각 가져오기 */
+export function getLoginTime(): number | null {
+    const time = localStorage.getItem(LOGIN_TIME_KEY);
+    return time ? parseInt(time, 10) : null;
 }
