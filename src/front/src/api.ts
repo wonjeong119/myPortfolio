@@ -23,9 +23,19 @@ export function removeToken(): void {
     localStorage.removeItem(LOGIN_TIME_KEY);
 }
 
-/** 로그인 여부 확인 */
+/** 로그인 여부 확인 (토큰 존재 + 30분 만료 체크) */
 export function isAuthenticated(): boolean {
-    return !!getToken();
+    const token = getToken();
+    if (!token) return false;
+
+    const loginTime = getLoginTime();
+    if (loginTime && Date.now() - loginTime > SESSION_TIMEOUT_MS) {
+        // 30분 초과 시 토큰 삭제 후 미인증 처리
+        removeToken();
+        return false;
+    }
+
+    return true;
 }
 
 /**
